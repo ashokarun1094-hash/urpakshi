@@ -77,14 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "பஞ்சபக்ஷி - Pancha Pakshi Timings" },
+      { name: "description", content: "Pancha Pakshi Shastra timings in Tamil. Enter your birth details and view daily auspicious and inauspicious activity periods." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "பஞ்சபக்ஷி - Pancha Pakshi Timings" },
+      { property: "og:description", content: "Pancha Pakshi Shastra timings in Tamil. Enter your birth details and view daily auspicious and inauspicious activity periods." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "பஞ்சபக்ஷி - Pancha Pakshi Timings" },
+      { name: "twitter:description", content: "Pancha Pakshi Shastra timings in Tamil. Enter your birth details and view daily auspicious and inauspicious activity periods." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a7e19e9d-9940-4786-9079-ea24f8ca8a2c/id-preview-fd080bd0--10a32a7d-32a8-4356-a0f3-9f04a0095564.lovable.app-1783925214947.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a7e19e9d-9940-4786-9079-ea24f8ca8a2c/id-preview-fd080bd0--10a32a7d-32a8-4356-a0f3-9f04a0095564.lovable.app-1783925214947.png" },
     ],
     links: [
       {

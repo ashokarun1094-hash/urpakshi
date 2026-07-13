@@ -22,7 +22,7 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "பஞ்சபக்ஷி - Pancha Pakshi Timings" },
       {
         property: "og:description",
-        content: "Daily bird activity timings and sub-timings based on your birth details.",
+        content: "Pancha Pakshi Shastra timings in Tamil. Enter your birth details and view daily auspicious and inauspicious activity periods.",
       },
     ],
     links: [
