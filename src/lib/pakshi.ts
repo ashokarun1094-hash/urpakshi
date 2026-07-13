@@ -52,19 +52,37 @@ export const NAKSHATRAS = [
 
 export type Nakshatra = (typeof NAKSHATRAS)[number];
 
-// Shukla paksha janma pakshi table (nakshatra index → bird).
-// In Krishna paksha the mapping shifts by 2 birds (documented in classical texts).
+// Classical Pancha Pakshi Shastra janma-pakshi tables. Nakshatra index uses
+// the Vedic ordering starting from Ashwini (0). Counts: 5+6+6+5+5 = 27.
+//
+// Shukla Paksha:
+//   வல்லூறு (Vulture)  : Bharani..Ardra           (1..5)
+//   ஆந்தை (Owl)         : Punarvasu..Uttaraphalguni (6..11)
+//   காகம் (Crow)        : Hasta..Jyeshta            (12..17)
+//   கோழி (Cock)         : Mula..Dhanishta           (18..22)
+//   மயில் (Peacock)     : Shatabhisha..Ashwini      (23..26, 0)
 const JANMA_SHUKLA: Bird[] = [
-  "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு", // 0..5
-  "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை",                   // 6..10
-  "காகம்", "காகம்", "காகம்", "காகம்", "காகம்", "காகம்",             // 11..16
-  "கோழி", "கோழி", "கோழி", "கோழி", "கோழி", "கோழி",                 // 17..22
-  "மயில்", "மயில்", "மயில்", "மயில்",                             // 23..26
+  "மயில்",                                                       // 0  Ashwini
+  "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு",         // 1..5
+  "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை",         // 6..11
+  "காகம்", "காகம்", "காகம்", "காகம்", "காகம்", "காகம்",           // 12..17
+  "கோழி", "கோழி", "கோழி", "கோழி", "கோழி",                       // 18..22
+  "மயில்", "மயில்", "மயில்", "மயில்",                           // 23..26
+];
+
+// Krishna Paksha: birds rotate one group forward (Peacock ← first group).
+const JANMA_KRISHNA: Bird[] = [
+  "கோழி",                                                       // 0  Ashwini
+  "மயில்", "மயில்", "மயில்", "மயில்", "மயில்",                    // 1..5
+  "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு", // 6..11
+  "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை",         // 12..17
+  "காகம்", "காகம்", "காகம்", "காகம்", "காகம்",                   // 18..22
+  "கோழி", "கோழி", "கோழி", "கோழி",                             // 23..26
 ];
 
 export function janmaPakshi(nakIdx: number, paksha: "shukla" | "krishna"): Bird {
-  const shift = paksha === "krishna" ? 2 : 0;
-  return JANMA_SHUKLA[(nakIdx + shift * 5) % 27] ?? "வல்லூறு";
+  const i = ((nakIdx % 27) + 27) % 27;
+  return (paksha === "krishna" ? JANMA_KRISHNA[i] : JANMA_SHUKLA[i]) ?? "வல்லூறு";
 }
 
 /* ---------------- Friend / Enemy tables ---------------- */

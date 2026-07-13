@@ -74,3 +74,14 @@
     font-family: var(--font-tamil);
   }
 }
+
+/* Native date input styled as pill */
+.date-pill input[type="date"] {
+  min-width: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.date-pill input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.6;
+  cursor: pointer;
+}

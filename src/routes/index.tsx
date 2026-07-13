@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   AUSPICIOUS_ACTIVITY,
   ACTIVITY_MEANING,
@@ -320,46 +320,26 @@ function DetailScreen({
   const weekdayTa = ["ஞாயிறு", "திங்கள்", "செவ்வாய்", "புதன்", "வியாழன்", "வெள்ளி", "சனி"][
     date.getDay()
   ];
-  const dateInputRef = useRef<HTMLInputElement>(null);
-  const openPicker = () => {
-    const el = dateInputRef.current;
-    if (!el) return;
-    if (typeof el.showPicker === "function") {
-      try {
-        el.showPicker();
-        return;
-      } catch {
-        /* fall through */
-      }
-    }
-    el.focus();
-    el.click();
-  };
 
   return (
     <>
       <Header title="பஞ்சபக்ஷி" onBack={onBack} />
       <div className="bg-[image:var(--gradient-header)] text-header-foreground pt-2 pb-20 relative">
-        <button
-          type="button"
-          onClick={openPicker}
-          className="relative mx-4 flex items-center justify-between gap-2 py-2.5 px-4 bg-card/95 rounded-full shadow-[var(--shadow-soft)] cursor-pointer text-foreground mt-1 w-[calc(100%-2rem)]"
-        >
+        <div className="date-pill mx-4 flex items-center justify-between gap-2 py-2.5 px-4 bg-card/95 rounded-full shadow-[var(--shadow-soft)] text-foreground mt-1">
           <span className="text-lg">📅</span>
-          <span className="font-semibold text-base flex-1 text-center">{formatDate(date)}</span>
-          <span className="text-xs font-semibold text-primary">தேதி தேர்வு ▾</span>
           <input
-            ref={dateInputRef}
             type="date"
             value={isoDate}
             onChange={(e) => {
-              const [y, m, d] = e.target.value.split("-").map(Number);
-              if (y && m && d) setDate(new Date(y, m - 1, d));
+              const v = e.target.value;
+              const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+              if (m) setDate(new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
             }}
-            className="absolute right-2 bottom-0 w-1 h-1 opacity-0 pointer-events-none"
-            tabIndex={-1}
+            className="flex-1 bg-transparent outline-none text-center text-base font-semibold cursor-pointer"
+            style={{ colorScheme: "light" }}
           />
-        </button>
+          <span className="text-xs font-semibold text-primary pointer-events-none">▾</span>
+        </div>
         <div className="text-center text-xs opacity-90 mt-2 mb-3">
           {weekdayTa} • {place.name}
         </div>
