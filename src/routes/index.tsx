@@ -1,13 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
-  ACTIVITY_ORDER,
-  AUSPICIOUS,
+  AUSPICIOUS_ACTIVITY,
+  ACTIVITY_MEANING,
+  BIRD_INFO,
+  NAKSHATRAS,
+  PLACES,
   computeSlots,
-  currentPakshi,
+  currentActivity,
+  enemyOf,
   formatDate,
   formatRange,
+  friendOf,
+  janmaPakshi,
+  pakshaFromDate,
   type Activity,
+  type Bird,
+  type Place,
 } from "@/lib/pakshi";
 
 export const Route = createFileRoute("/")({
@@ -17,12 +26,12 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Pancha Pakshi Shastra timings in Tamil. Enter your birth details and view daily auspicious and inauspicious activity periods.",
+          "Pancha Pakshi Shastra timings in Tamil. Enter your birth details and view daily janma, friend and enemy pakshi activities.",
       },
       { property: "og:title", content: "பஞ்சபக்ஷி - Pancha Pakshi Timings" },
       {
         property: "og:description",
-        content: "Pancha Pakshi Shastra timings in Tamil. Enter your birth details and view daily auspicious and inauspicious activity periods.",
+        content: "Janma, natpu and pagai pakshi timings with sub-activities.",
       },
     ],
     links: [
@@ -46,7 +55,9 @@ interface FormData {
   hour: string;
   minute: string;
   meridiem: "AM" | "PM";
-  place: string;
+  placeId: string;
+  nakshatraIdx: number;
+  paksha: "shukla" | "krishna";
 }
 
 function App() {
@@ -60,25 +71,28 @@ function App() {
     hour: "",
     minute: "",
     meridiem: "AM",
-    place: "",
+    placeId: "dharmapuri",
+    nakshatraIdx: 5,
+    paksha: "krishna",
   });
   const [date, setDate] = useState(new Date());
   const [period, setPeriod] = useState<"day" | "night">("day");
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
+  const place = PLACES.find((p) => p.id === form.placeId) ?? PLACES[0];
+  const janma: Bird = janmaPakshi(form.nakshatraIdx, form.paksha);
+
   return (
     <div className="min-h-screen bg-background flex justify-center">
       <div className="w-full max-w-md bg-background shadow-xl relative min-h-screen flex flex-col">
         {screen === "form" && (
-          <FormScreen
-            form={form}
-            setForm={setForm}
-            onSubmit={() => setScreen("detail")}
-          />
+          <FormScreen form={form} setForm={setForm} onSubmit={() => setScreen("detail")} />
         )}
         {screen === "detail" && (
           <DetailScreen
             form={form}
+            place={place}
+            janma={janma}
             date={date}
             setDate={setDate}
             onBack={() => setScreen("form")}
@@ -89,6 +103,8 @@ function App() {
           <TimingsScreen
             date={date}
             period={period}
+            place={place}
+            janma={janma}
             setPeriod={setPeriod}
             onBack={() => setScreen("detail")}
             onExpand={(i) => {
@@ -101,6 +117,8 @@ function App() {
           <SubTimingsScreen
             date={date}
             period={period}
+            place={place}
+            janma={janma}
             focusIdx={expandedIdx}
             onBack={() => setScreen("timings")}
           />
@@ -121,14 +139,13 @@ function FormScreen({
   setForm: (f: FormData) => void;
   onSubmit: () => void;
 }) {
-  const set = <K extends keyof FormData>(k: K, v: FormData[K]) =>
-    setForm({ ...form, [k]: v });
+  const set = <K extends keyof FormData>(k: K, v: FormData[K]) => setForm({ ...form, [k]: v });
 
   return (
     <>
       <Header title="Pancha Pakshi Form" />
       <div className="p-4 -mt-6">
-        <div className="bg-card rounded-3xl shadow-lg p-6 space-y-5">
+        <div className="bg-card rounded-3xl shadow-[var(--shadow-card)] p-6 space-y-5">
           <Field label="பெயர்">
             <div className="flex items-center gap-3 border border-border rounded-xl px-3 py-2.5">
               <span className="text-muted-foreground">👤</span>
@@ -153,9 +170,7 @@ function FormScreen({
                 >
                   <span
                     className={`w-4 h-4 rounded-full border-2 ${
-                      form.gender === g
-                        ? "border-primary bg-primary"
-                        : "border-primary"
+                      form.gender === g ? "border-primary bg-primary" : "border-primary"
                     }`}
                   />
                   {g}
@@ -190,20 +205,66 @@ function FormScreen({
           </Field>
 
           <Field label="பிறந்த இடம்">
-            <div className="flex items-center gap-3 border border-border rounded-xl px-3 py-2.5">
+            <div className="flex items-center gap-3 border border-border rounded-xl px-3 py-2 bg-background">
               <span className="text-muted-foreground">📍</span>
-              <input
-                className="flex-1 bg-transparent outline-none text-sm"
-                placeholder="பிறந்த இடத்தை உள்ளிடவும்"
-                value={form.place}
-                onChange={(e) => set("place", e.target.value)}
-              />
+              <select
+                className="flex-1 bg-transparent outline-none text-sm py-1"
+                value={form.placeId}
+                onChange={(e) => set("placeId", e.target.value)}
+              >
+                {PLACES.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </Field>
+
+          <Field label="நட்சத்திரம்">
+            <div className="flex items-center gap-3 border border-border rounded-xl px-3 py-2 bg-background">
+              <span className="text-muted-foreground">✨</span>
+              <select
+                className="flex-1 bg-transparent outline-none text-sm py-1"
+                value={form.nakshatraIdx}
+                onChange={(e) => set("nakshatraIdx", Number(e.target.value))}
+              >
+                {NAKSHATRAS.map((n, i) => (
+                  <option key={n} value={i}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </Field>
+
+          <Field label="பிறப்பு பக்ஷம்">
+            <div className="flex gap-3">
+              {(
+                [
+                  { v: "shukla", l: "வளர் பிறை" },
+                  { v: "krishna", l: "தேய் பிறை" },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.v}
+                  type="button"
+                  onClick={() => set("paksha", opt.v)}
+                  className={`flex-1 py-2 rounded-xl text-sm font-medium border ${
+                    form.paksha === opt.v
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "border-border text-foreground"
+                  }`}
+                >
+                  {opt.l}
+                </button>
+              ))}
             </div>
           </Field>
 
           <button
             onClick={onSubmit}
-            className="w-full bg-primary text-primary-foreground font-semibold py-3 rounded-full shadow-md hover:brightness-105 transition"
+            className="w-full bg-[image:var(--gradient-primary)] text-primary-foreground font-semibold py-3 rounded-full shadow-[var(--shadow-card)]"
           >
             Submit
           </button>
@@ -245,39 +306,42 @@ function MiniInput({
 
 function DetailScreen({
   form,
+  place,
+  janma,
   date,
   setDate,
   onBack,
   onView,
 }: {
   form: FormData;
+  place: Place;
+  janma: Bird;
   date: Date;
   setDate: (d: Date) => void;
   onBack: () => void;
   onView: () => void;
 }) {
-  const pakshi = currentPakshi(date);
-
   const shiftDay = (n: number) => {
     const d = new Date(date);
     d.setDate(d.getDate() + n);
     setDate(d);
   };
 
+  const period: "day" | "night" = date.getHours() >= 6 && date.getHours() < 18 ? "day" : "night";
+  const dayPaksha = pakshaFromDate(date);
+  const slots = useMemo(
+    () => computeSlots(date, period, place, janma),
+    [date, period, place, janma]
+  );
+  const current = currentActivity(slots, new Date());
+  const currentBird: Bird = current?.bird ?? janma;
+  const friend = friendOf(janma, dayPaksha, period);
+  const enemy = enemyOf(janma, dayPaksha, period);
+
   const isoDate = date.toISOString().slice(0, 10);
   const weekdayTa = ["ஞாயிறு", "திங்கள்", "செவ்வாய்", "புதன்", "வியாழன்", "வெள்ளி", "சனி"][
     date.getDay()
   ];
-  const nakshatras = [
-    "அஸ்வினி", "பரணி", "கார்த்திகை", "ரோகிணி", "மிருகசீரிடம்", "திருவாதிரை", "புனர்பூசம்",
-    "பூசம்", "ஆயில்யம்", "மகம்", "பூரம்", "உத்திரம்", "ஹஸ்தம்", "சித்திரை",
-  ];
-  const dayIdx = Math.floor(
-    (date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / 86400000
-  );
-  const nakshatra = nakshatras[dayIdx % nakshatras.length];
-  const tithi = ((dayIdx % 15) + 1) + " திதி";
-  const rasi = ["மேஷம்", "ரிஷபம்", "மிதுனம்", "கடகம்", "சிம்மம்", "கன்னி"][dayIdx % 6];
 
   return (
     <>
@@ -285,9 +349,7 @@ function DetailScreen({
       <div className="bg-[image:var(--gradient-header)] text-header-foreground pt-2 pb-20 relative">
         <label className="relative mx-4 flex items-center justify-between gap-2 py-2.5 px-4 bg-card/95 rounded-full shadow-[var(--shadow-soft)] cursor-pointer text-foreground mt-1">
           <span className="text-lg">📅</span>
-          <span className="font-semibold text-base flex-1 text-center">
-            {formatDate(date)}
-          </span>
+          <span className="font-semibold text-base flex-1 text-center">{formatDate(date)}</span>
           <span className="text-xs font-semibold text-primary">தேதி தேர்வு ▾</span>
           <input
             type="date"
@@ -300,7 +362,9 @@ function DetailScreen({
             style={{ colorScheme: "light" }}
           />
         </label>
-        <div className="text-center text-xs opacity-90 mt-2 mb-3">{weekdayTa}</div>
+        <div className="text-center text-xs opacity-90 mt-2 mb-3">
+          {weekdayTa} • {place.name}
+        </div>
         <div className="mx-4 bg-card rounded-full shadow-[var(--shadow-soft)] flex overflow-hidden p-1">
           <button
             onClick={() => shiftDay(-1)}
@@ -324,31 +388,29 @@ function DetailScreen({
         </svg>
       </div>
 
-      <div className="p-6 space-y-4">
+      <div className="p-5 space-y-3">
         <InfoRow label="பெயர்" value={form.name || "—"} />
         <InfoRow label="பாலினம்" value={form.gender} />
-        <InfoRow label="பிறந்த இடம்" value={form.place || "—"} />
+        <InfoRow label="பிறந்த இடம்" value={place.name} />
+        <InfoRow label="நட்சத்திரம்" value={NAKSHATRAS[form.nakshatraIdx]} />
         <InfoRow
-          label="பிறந்த தேதி"
-          value={
-            form.day && form.month && form.year
-              ? `${form.day}-${form.month}-${form.year}`
-              : "—"
-          }
+          label="பிறப்பு பக்ஷம்"
+          value={form.paksha === "krishna" ? "க்ருஷ்ண பக்ஷம்" : "சுக்ல பக்ஷம்"}
         />
-        <InfoRow
-          label="பிறந்த நேரம்"
-          value={
-            form.hour && form.minute ? `${form.hour}:${form.minute} ${form.meridiem}` : "—"
-          }
-        />
-        <div className="border-t border-border my-2" />
-        <InfoRow label="வாரம்" value={weekdayTa} />
-        <InfoRow label="நட்சத்திரம்" value={nakshatra} />
-        <InfoRow label="ராசி" value={rasi} />
-        <InfoRow label="திதி" value={tithi} />
-        <InfoRow label="பிறப்பு பக்ஷம்" value="க்ருஷ்ண பக்ஷம்" />
-        <InfoRow label="நடப்பு பக்ஷி" value={pakshi.name} valueColor={pakshi.color} withDot />
+
+        <div className="pt-2 space-y-3">
+          <PakshiCard
+            heading="பிறப்பு பட்சி (Janma)"
+            bird={janma}
+            tone="primary"
+            note={current ? `இப்போது: ${current.activity}` : undefined}
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <PakshiCard heading="நட்பு பட்சி" bird={friend} tone="friend" />
+            <PakshiCard heading="பகை பட்சி" bird={enemy} tone="enemy" />
+          </div>
+          <PakshiCard heading="நடப்பு பட்சி" bird={currentBird} tone="current" />
+        </div>
 
         <button
           onClick={onView}
@@ -361,37 +423,47 @@ function DetailScreen({
   );
 }
 
-function InfoRow({
-  label,
-  value,
-  valueColor,
-  withDot,
-}: {
-  label: string;
-  value: string;
-  valueColor?: string;
-  withDot?: boolean;
-}) {
-  const color =
-    valueColor === "inauspicious"
-      ? "text-inauspicious"
-      : valueColor === "auspicious"
-      ? "text-auspicious"
-      : "text-auspicious";
+function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid grid-cols-[110px_12px_1fr] gap-3 items-start">
+    <div className="grid grid-cols-[110px_12px_1fr] gap-3 items-start text-sm">
       <span className="text-muted-foreground">{label}</span>
       <span className="text-muted-foreground">:</span>
-      <span className={`font-medium ${color} flex items-center gap-2`}>
-        {withDot && (
-          <span
-            className={`w-2.5 h-2.5 rounded-full ${
-              valueColor === "inauspicious" ? "bg-inauspicious" : "bg-auspicious"
-            }`}
-          />
-        )}
-        {value}
-      </span>
+      <span className="font-medium text-foreground">{value}</span>
+    </div>
+  );
+}
+
+function PakshiCard({
+  heading,
+  bird,
+  tone,
+  note,
+}: {
+  heading: string;
+  bird: Bird;
+  tone: "primary" | "friend" | "enemy" | "current";
+  note?: string;
+}) {
+  const info = BIRD_INFO[bird];
+  const toneClass = {
+    primary: "bg-[image:var(--gradient-primary)] text-primary-foreground",
+    friend: "bg-auspicious/10 border border-auspicious/30 text-foreground",
+    enemy: "bg-inauspicious/10 border border-inauspicious/30 text-foreground",
+    current: "bg-card border border-border text-foreground shadow-[var(--shadow-soft)]",
+  }[tone];
+  return (
+    <div className={`rounded-2xl p-4 ${toneClass}`}>
+      <div className="text-[11px] uppercase tracking-wide opacity-80 font-semibold">
+        {heading}
+      </div>
+      <div className="mt-1 flex items-baseline gap-2">
+        <span className="text-xl font-bold">{bird}</span>
+        <span className="text-xs opacity-80">({info.english})</span>
+      </div>
+      <div className="text-xs opacity-80 mt-1">
+        {info.element} • திசை: {info.direction}
+      </div>
+      {note && <div className="text-xs font-semibold mt-2">{note}</div>}
     </div>
   );
 }
@@ -401,32 +473,31 @@ function InfoRow({
 function TimingsScreen({
   date,
   period,
+  place,
+  janma,
   setPeriod,
   onBack,
   onExpand,
 }: {
   date: Date;
   period: "day" | "night";
+  place: Place;
+  janma: Bird;
   setPeriod: (p: "day" | "night") => void;
   onBack: () => void;
   onExpand: (i: number) => void;
 }) {
-  const slots = useMemo(() => computeSlots(date, period), [date, period]);
+  const slots = useMemo(
+    () => computeSlots(date, period, place, janma),
+    [date, period, place, janma]
+  );
 
   return (
     <>
       <Header title="பட்சியின் நிலைகள்" onBack={onBack} />
       <div className="bg-[image:var(--gradient-header)] pt-2 pb-6 flex justify-center gap-4">
-        <PeriodPill
-          label="பகல்"
-          active={period === "day"}
-          onClick={() => setPeriod("day")}
-        />
-        <PeriodPill
-          label="இரவு"
-          active={period === "night"}
-          onClick={() => setPeriod("night")}
-        />
+        <PeriodPill label="பகல்" active={period === "day"} onClick={() => setPeriod("day")} />
+        <PeriodPill label="இரவு" active={period === "night"} onClick={() => setPeriod("night")} />
       </div>
 
       <div className="bg-panel m-4 p-4 rounded-2xl grid grid-cols-2 gap-x-4 gap-y-6">
@@ -436,18 +507,20 @@ function TimingsScreen({
             onClick={() => onExpand(i)}
             className={`text-center ${i === 2 ? "col-span-2" : ""}`}
           >
-            <ActivityLabel activity={s.activity} />
-            <div className="text-sm font-medium mt-1">
-              {formatRange(s.start, s.end)}
-            </div>
+            <BirdActivityLabel bird={s.bird} activity={s.activity} />
+            <div className="text-sm font-medium mt-1">{formatRange(s.start, s.end)}</div>
             <div
               className={`h-1.5 rounded-full mx-6 mt-1 ${
-                AUSPICIOUS[s.activity] ? "bg-auspicious" : "bg-inauspicious"
+                AUSPICIOUS_ACTIVITY[s.activity] ? "bg-auspicious" : "bg-inauspicious"
               }`}
             />
           </button>
         ))}
       </div>
+
+      <p className="text-[11px] text-muted-foreground text-center px-6 pb-6 leading-relaxed">
+        சூரிய உதயம் / அஸ்தமனம் இருப்பிடத்தை பொறுத்து கணக்கிடப்படுகிறது ({place.name}).
+      </p>
     </>
   );
 }
@@ -468,7 +541,7 @@ function PeriodPill({
     >
       <span
         className={`w-4 h-4 rounded-full border-2 border-primary flex items-center justify-center ${
-          active ? "bg-white" : ""
+          active ? "bg-card" : ""
         }`}
       >
         {active && <span className="w-2 h-2 rounded-full bg-primary" />}
@@ -478,11 +551,12 @@ function PeriodPill({
   );
 }
 
-function ActivityLabel({ activity }: { activity: Activity }) {
-  const color = AUSPICIOUS[activity] ? "text-auspicious" : "text-inauspicious";
+function BirdActivityLabel({ bird, activity }: { bird: Bird; activity: Activity }) {
+  const color = AUSPICIOUS_ACTIVITY[activity] ? "text-auspicious" : "text-inauspicious";
   return (
-    <div className={`font-bold text-lg ${color}`}>
-      {activity} <span className="text-xs">▼</span>
+    <div className={`font-bold ${color}`}>
+      <div className="text-base leading-tight">{activity}</div>
+      <div className="text-[11px] font-medium opacity-80">{bird}</div>
     </div>
   );
 }
@@ -492,15 +566,22 @@ function ActivityLabel({ activity }: { activity: Activity }) {
 function SubTimingsScreen({
   date,
   period,
+  place,
+  janma,
   focusIdx,
   onBack,
 }: {
   date: Date;
   period: "day" | "night";
+  place: Place;
+  janma: Bird;
   focusIdx: number;
   onBack: () => void;
 }) {
-  const slots = useMemo(() => computeSlots(date, period), [date, period]);
+  const slots = useMemo(
+    () => computeSlots(date, period, place, janma),
+    [date, period, place, janma]
+  );
   const focus = slots[focusIdx];
   const prev = slots.slice(0, focusIdx);
   const next = slots.slice(focusIdx + 1);
@@ -510,23 +591,29 @@ function SubTimingsScreen({
       <Header title="பட்சியின் நிலைகள்" onBack={onBack} />
       <div className="bg-panel mx-4 mt-4 p-3 rounded-2xl grid grid-cols-2 gap-x-4 gap-y-4">
         {prev.map((s, i) => (
-          <MiniSlot key={i} activity={s.activity} start={s.start} end={s.end} />
+          <MiniSlot key={i} bird={s.bird} activity={s.activity} start={s.start} end={s.end} />
         ))}
       </div>
 
-      <div className="mx-4 my-4 bg-card border-2 border-pink-200 rounded-2xl p-4 shadow-sm">
-        <div className="bg-pink-100 rounded-xl py-2 text-center font-bold text-foreground mb-4">
-          சூட்சம பட்சி
+      <div className="mx-4 my-4 bg-card border-2 border-primary/30 rounded-2xl p-4 shadow-[var(--shadow-soft)]">
+        <div className="bg-primary/15 rounded-xl py-2 text-center font-bold text-foreground mb-1">
+          சூட்சம பட்சி — {focus.bird} • {focus.activity}
+        </div>
+        <div className="text-[11px] text-center text-muted-foreground mb-3">
+          {ACTIVITY_MEANING[focus.activity]}
         </div>
         <div className="space-y-3">
           {focus.subs.map((sub, i) => (
-            <div key={i}>
-              <div
-                className={`font-bold ${
-                  AUSPICIOUS[sub.activity] ? "text-auspicious" : "text-inauspicious"
-                }`}
-              >
-                {sub.activity}
+            <div key={i} className="flex items-baseline justify-between gap-3">
+              <div>
+                <div
+                  className={`font-bold ${
+                    AUSPICIOUS_ACTIVITY[sub.activity] ? "text-auspicious" : "text-inauspicious"
+                  }`}
+                >
+                  {sub.activity}
+                </div>
+                <div className="text-[11px] text-muted-foreground">{sub.bird}</div>
               </div>
               <div className="text-sm font-medium text-foreground/80">
                 {formatRange(sub.start, sub.end, true)}
@@ -538,7 +625,7 @@ function SubTimingsScreen({
 
       <div className="bg-panel mx-4 mb-6 p-3 rounded-2xl grid grid-cols-2 gap-x-4 gap-y-4">
         {next.map((s, i) => (
-          <MiniSlot key={i} activity={s.activity} start={s.start} end={s.end} />
+          <MiniSlot key={i} bird={s.bird} activity={s.activity} start={s.start} end={s.end} />
         ))}
       </div>
     </>
@@ -546,21 +633,23 @@ function SubTimingsScreen({
 }
 
 function MiniSlot({
+  bird,
   activity,
   start,
   end,
 }: {
+  bird: Bird;
   activity: Activity;
   start: number;
   end: number;
 }) {
   return (
     <div className="text-center">
-      <ActivityLabel activity={activity} />
+      <BirdActivityLabel bird={bird} activity={activity} />
       <div className="text-sm font-medium mt-0.5">{formatRange(start, end)}</div>
       <div
         className={`h-1 rounded-full mx-6 mt-1 ${
-          AUSPICIOUS[activity] ? "bg-auspicious" : "bg-inauspicious"
+          AUSPICIOUS_ACTIVITY[activity] ? "bg-auspicious" : "bg-inauspicious"
         }`}
       />
     </div>
