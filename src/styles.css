@@ -52,9 +52,9 @@
   --border: oklch(0.9 0.02 70);
   --input: oklch(0.92 0.015 70);
   --ring: oklch(0.72 0.17 55);
-  --header: oklch(0.7 0.18 45);
+  --header: oklch(0.5 0.2 260);
   --header-foreground: oklch(1 0 0);
-  --header-glow: oklch(0.82 0.17 70);
+  --header-glow: oklch(0.6 0.23 25);
   --panel: oklch(0.95 0.03 40 / 0.7);
   --pill: oklch(0.93 0.04 210);
   --pill-foreground: oklch(0.25 0.05 60);
