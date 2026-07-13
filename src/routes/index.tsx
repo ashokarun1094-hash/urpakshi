@@ -13,6 +13,8 @@ import {
   formatRange,
   friendOf,
   janmaPakshi,
+  nakshatraFromDate,
+  pakshaFromBirth,
   pakshaFromDate,
   type Activity,
   type Bird,
@@ -56,8 +58,16 @@ interface FormData {
   minute: string;
   meridiem: "AM" | "PM";
   placeId: string;
-  nakshatraIdx: number;
-  paksha: "shukla" | "krishna";
+}
+
+function parseBirthDate(f: FormData): Date | null {
+  const y = Number(f.year), m = Number(f.month), d = Number(f.day);
+  if (!y || !m || !d) return null;
+  let h = Number(f.hour) || 0;
+  const min = Number(f.minute) || 0;
+  if (f.meridiem === "PM" && h < 12) h += 12;
+  if (f.meridiem === "AM" && h === 12) h = 0;
+  return new Date(Date.UTC(y, m - 1, d, h - 5, min - 30)); // IST → UTC
 }
 
 function App() {
@@ -72,15 +82,16 @@ function App() {
     minute: "",
     meridiem: "AM",
     placeId: "dharmapuri",
-    nakshatraIdx: 5,
-    paksha: "krishna",
   });
   const [date, setDate] = useState(new Date());
   const [period, setPeriod] = useState<"day" | "night">("day");
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
   const place = PLACES.find((p) => p.id === form.placeId) ?? PLACES[0];
-  const janma: Bird = janmaPakshi(form.nakshatraIdx, form.paksha);
+  const birth = parseBirthDate(form);
+  const nakshatraIdx = birth ? nakshatraFromDate(birth) : 0;
+  const paksha = birth ? pakshaFromBirth(birth) : "shukla";
+  const janma: Bird = janmaPakshi(nakshatraIdx, paksha);
 
   return (
     <div className="min-h-screen bg-background flex justify-center">
@@ -93,6 +104,8 @@ function App() {
             form={form}
             place={place}
             janma={janma}
+            nakshatraIdx={nakshatraIdx}
+            paksha={paksha}
             date={date}
             setDate={setDate}
             onBack={() => setScreen("form")}
@@ -221,46 +234,6 @@ function FormScreen({
             </div>
           </Field>
 
-          <Field label="நட்சத்திரம்">
-            <div className="flex items-center gap-3 border border-border rounded-xl px-3 py-2 bg-background">
-              <span className="text-muted-foreground">✨</span>
-              <select
-                className="flex-1 bg-transparent outline-none text-sm py-1"
-                value={form.nakshatraIdx}
-                onChange={(e) => set("nakshatraIdx", Number(e.target.value))}
-              >
-                {NAKSHATRAS.map((n, i) => (
-                  <option key={n} value={i}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </Field>
-
-          <Field label="பிறப்பு பக்ஷம்">
-            <div className="flex gap-3">
-              {(
-                [
-                  { v: "shukla", l: "வளர் பிறை" },
-                  { v: "krishna", l: "தேய் பிறை" },
-                ] as const
-              ).map((opt) => (
-                <button
-                  key={opt.v}
-                  type="button"
-                  onClick={() => set("paksha", opt.v)}
-                  className={`flex-1 py-2 rounded-xl text-sm font-medium border ${
-                    form.paksha === opt.v
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "border-border text-foreground"
-                  }`}
-                >
-                  {opt.l}
-                </button>
-              ))}
-            </div>
-          </Field>
 
           <button
             onClick={onSubmit}
@@ -308,6 +281,8 @@ function DetailScreen({
   form,
   place,
   janma,
+  nakshatraIdx,
+  paksha,
   date,
   setDate,
   onBack,
@@ -316,6 +291,8 @@ function DetailScreen({
   form: FormData;
   place: Place;
   janma: Bird;
+  nakshatraIdx: number;
+  paksha: "shukla" | "krishna";
   date: Date;
   setDate: (d: Date) => void;
   onBack: () => void;
@@ -392,10 +369,10 @@ function DetailScreen({
         <InfoRow label="பெயர்" value={form.name || "—"} />
         <InfoRow label="பாலினம்" value={form.gender} />
         <InfoRow label="பிறந்த இடம்" value={place.name} />
-        <InfoRow label="நட்சத்திரம்" value={NAKSHATRAS[form.nakshatraIdx]} />
+        <InfoRow label="நட்சத்திரம்" value={NAKSHATRAS[nakshatraIdx]} />
         <InfoRow
           label="பிறப்பு பக்ஷம்"
-          value={form.paksha === "krishna" ? "க்ருஷ்ண பக்ஷம்" : "சுக்ல பக்ஷம்"}
+          value={paksha === "krishna" ? "க்ருஷ்ண பக்ஷம்" : "சுக்ல பக்ஷம்"}
         />
 
         <div className="pt-2 space-y-3">

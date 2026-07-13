@@ -255,3 +255,27 @@ export function pakshaFromDate(d: Date): "shukla" | "krishna" {
   );
   return N % 30 < 15 ? "shukla" : "krishna";
 }
+
+// Approximate nakshatra index (0..26) from a birth Date using mean lunar
+// longitude minus Lahiri ayanamsa. Accurate to ~1 nakshatra for demo use.
+export function nakshatraFromDate(d: Date): number {
+  const J2000 = Date.UTC(2000, 0, 1, 12, 0, 0);
+  const days = (d.getTime() - J2000) / 86400000;
+  // Mean tropical lunar longitude
+  const tropical = 218.316 + 13.176396 * days;
+  // Approximate Lahiri ayanamsa for year (~24° in 2026, ~1'/year drift)
+  const year = d.getUTCFullYear();
+  const ayanamsa = 23.85 + (year - 2000) * (50.29 / 3600);
+  const sidereal = ((tropical - ayanamsa) % 360 + 360) % 360;
+  return Math.floor(sidereal / (360 / 27)) % 27;
+}
+
+// Paksha from lunar phase (sun/moon elongation).
+export function pakshaFromBirth(d: Date): "shukla" | "krishna" {
+  const J2000 = Date.UTC(2000, 0, 1, 12, 0, 0);
+  const days = (d.getTime() - J2000) / 86400000;
+  const moon = 218.316 + 13.176396 * days;
+  const sun = 280.46 + 0.9856474 * days;
+  const elong = ((moon - sun) % 360 + 360) % 360;
+  return elong < 180 ? "shukla" : "krishna";
+}
