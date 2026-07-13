@@ -281,6 +281,8 @@ function DetailScreen({
   form,
   place,
   janma,
+  nakshatraIdx,
+  paksha,
   date,
   setDate,
   onBack,
@@ -289,6 +291,8 @@ function DetailScreen({
   form: FormData;
   place: Place;
   janma: Bird;
+  nakshatraIdx: number;
+  paksha: "shukla" | "krishna";
   date: Date;
   setDate: (d: Date) => void;
   onBack: () => void;
