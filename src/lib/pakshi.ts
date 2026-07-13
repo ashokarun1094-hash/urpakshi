@@ -189,34 +189,46 @@ export interface Slot {
   subs: { bird: Bird; activity: Activity; start: number; end: number }[];
 }
 
+export function defaultSunTimes(date: Date, place: Place) {
+  return sunTimes(date, place.lat, place.lon);
+}
+
 export function computeSlots(
   date: Date,
   period: "day" | "night",
   place: Place,
-  janma: Bird
+  janma: Bird,
+  paksha: "shukla" | "krishna" = "shukla",
+  overrideSun?: { sunrise: number; sunset: number }
 ): Slot[] {
-  const { sunrise, sunset } = sunTimes(date, place.lat, place.lon);
+  const { sunrise, sunset } = overrideSun ?? sunTimes(date, place.lat, place.lon);
   const start = period === "day" ? sunrise : sunset;
   const end = period === "day" ? sunset : sunrise + 24 * 60;
   const total = end - start;
   const chunk = total / 5;
 
   const weekday = date.getDay();
-  const birdOrder = period === "day" ? BIRD_ORDER_DAY : BIRD_ORDER_NIGHT;
+  // Bird order flips in Krishna paksha — this is why sub-timings differ
+  // between வளர் பிறை and தேய் பிறை for the same janma bird.
+  const baseOrder = period === "day" ? BIRD_ORDER_DAY : BIRD_ORDER_NIGHT;
+  const birdOrder = paksha === "krishna" ? [...baseOrder].reverse() : baseOrder;
   const janmaBirdIndex = birdOrder.indexOf(janma);
   const orderedBirds = rot(birdOrder, janmaBirdIndex >= 0 ? janmaBirdIndex : 0);
 
   const startAct = DAY_START_ACTIVITY[weekday] ?? "ஆட்சி";
   const startActIdx = ACTIVITIES.indexOf(startAct);
-  const activityOrder = rot(ACTIVITIES, startActIdx);
+  // Krishna paksha shifts the activity order by 2 (classical Ashwini-shift rule).
+  const pakshaShift = paksha === "krishna" ? 2 : 0;
+  const activityOrder = rot(ACTIVITIES, startActIdx + pakshaShift);
 
   return orderedBirds.map((bird, i) => {
     const s = start + i * chunk;
     const e = s + chunk;
     const act = activityOrder[i];
     const subChunk = chunk / 5;
-    const subBirds = rot(birdOrder, i);
-    const subActs = rot(activityOrder, i);
+    // Sub-slot ordering also depends on paksha, so சூட்சம பட்சி differs.
+    const subBirds = rot(birdOrder, i + (paksha === "krishna" ? 2 : 0));
+    const subActs = rot(activityOrder, i + (paksha === "krishna" ? 1 : 0));
     const subs = subBirds.map((b, j) => ({
       bird: b,
       activity: subActs[j],
@@ -225,6 +237,19 @@ export function computeSlots(
     }));
     return { bird, activity: act, start: s, end: e, subs };
   });
+}
+
+// Helper: "HH:MM" -> minutes from midnight
+export function timeToMinutes(t: string): number | null {
+  const m = t.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  return Number(m[1]) * 60 + Number(m[2]);
+}
+export function minutesToTime(min: number): string {
+  const m = ((min % 1440) + 1440) % 1440;
+  const h = Math.floor(m / 60);
+  const mm = Math.floor(m % 60);
+  return `${h.toString().padStart(2, "0")}:${mm.toString().padStart(2, "0")}`;
 }
 
 /* ---------------- Formatters ---------------- */
