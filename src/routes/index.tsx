@@ -86,6 +86,9 @@ function App() {
   const [date, setDate] = useState(new Date());
   const [period, setPeriod] = useState<"day" | "night">("day");
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+  const [sunOverride, setSunOverride] = useState<{ sunrise: string; sunset: string } | null>(
+    null
+  );
 
   const place = PLACES.find((p) => p.id === form.placeId) ?? PLACES[0];
   const birth = parseBirthDate(form);
@@ -118,6 +121,9 @@ function App() {
             period={period}
             place={place}
             janma={janma}
+            paksha={paksha}
+            sunOverride={sunOverride}
+            setSunOverride={setSunOverride}
             setPeriod={setPeriod}
             onBack={() => setScreen("detail")}
             onExpand={(i) => {
@@ -132,6 +138,8 @@ function App() {
             period={period}
             place={place}
             janma={janma}
+            paksha={paksha}
+            sunOverride={sunOverride}
             focusIdx={expandedIdx}
             onBack={() => setScreen("timings")}
           />
