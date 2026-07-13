@@ -283,7 +283,7 @@ function DetailScreen({
     <>
       <Header title="பஞ்சபக்ஷி" onBack={onBack} />
       <div className="bg-[image:var(--gradient-header)] text-header-foreground pt-2 pb-20 relative">
-        <label className="mx-4 flex items-center justify-between gap-2 py-2.5 px-4 bg-card/95 rounded-full shadow-[var(--shadow-soft)] cursor-pointer text-foreground mt-1">
+        <label className="relative mx-4 flex items-center justify-between gap-2 py-2.5 px-4 bg-card/95 rounded-full shadow-[var(--shadow-soft)] cursor-pointer text-foreground mt-1">
           <span className="text-lg">📅</span>
           <span className="font-semibold text-base flex-1 text-center">
             {formatDate(date)}
