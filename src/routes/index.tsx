@@ -328,8 +328,8 @@ function DetailScreen({
   const period: "day" | "night" = date.getHours() >= 6 && date.getHours() < 18 ? "day" : "night";
   const dayPaksha = pakshaFromDate(date);
   const slots = useMemo(
-    () => computeSlots(date, period, place, janma),
-    [date, period, place, janma]
+    () => computeSlots(date, period, place, janma, paksha),
+    [date, period, place, janma, paksha]
   );
   const current = currentActivity(slots, new Date());
   const currentBird: Bird = current?.bird ?? janma;
