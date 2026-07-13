@@ -104,6 +104,8 @@ function App() {
             form={form}
             place={place}
             janma={janma}
+            nakshatraIdx={nakshatraIdx}
+            paksha={paksha}
             date={date}
             setDate={setDate}
             onBack={() => setScreen("form")}
