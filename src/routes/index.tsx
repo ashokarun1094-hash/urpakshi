@@ -8,18 +8,31 @@ import {
   PLACES,
   computeSlots,
   currentActivity,
+  defaultSunTimes,
   enemyOf,
   formatDate,
   formatRange,
   friendOf,
   janmaPakshi,
+  minutesToTime,
   nakshatraFromDate,
   pakshaFromBirth,
   pakshaFromDate,
+  timeToMinutes,
   type Activity,
   type Bird,
   type Place,
 } from "@/lib/pakshi";
+
+type SunOverride = { sunrise: string; sunset: string } | null;
+
+function toSunMinutes(o: SunOverride) {
+  if (!o) return undefined;
+  const sr = timeToMinutes(o.sunrise);
+  const ss = timeToMinutes(o.sunset);
+  if (sr == null || ss == null) return undefined;
+  return { sunrise: sr, sunset: ss };
+}
 
 export const Route = createFileRoute("/")({
   head: () => ({
