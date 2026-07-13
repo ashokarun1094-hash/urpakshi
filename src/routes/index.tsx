@@ -413,7 +413,7 @@ function TimingsScreen({
   return (
     <>
       <Header title="பட்சியின் நிலைகள்" onBack={onBack} />
-      <div className="bg-header pt-2 pb-6 flex justify-center gap-4">
+      <div className="bg-[image:var(--gradient-header)] pt-2 pb-6 flex justify-center gap-4">
         <PeriodPill
           label="பகல்"
           active={period === "day"}
