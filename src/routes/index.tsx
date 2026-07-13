@@ -234,46 +234,6 @@ function FormScreen({
             </div>
           </Field>
 
-          <Field label="நட்சத்திரம்">
-            <div className="flex items-center gap-3 border border-border rounded-xl px-3 py-2 bg-background">
-              <span className="text-muted-foreground">✨</span>
-              <select
-                className="flex-1 bg-transparent outline-none text-sm py-1"
-                value={form.nakshatraIdx}
-                onChange={(e) => set("nakshatraIdx", Number(e.target.value))}
-              >
-                {NAKSHATRAS.map((n, i) => (
-                  <option key={n} value={i}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </Field>
-
-          <Field label="பிறப்பு பக்ஷம்">
-            <div className="flex gap-3">
-              {(
-                [
-                  { v: "shukla", l: "வளர் பிறை" },
-                  { v: "krishna", l: "தேய் பிறை" },
-                ] as const
-              ).map((opt) => (
-                <button
-                  key={opt.v}
-                  type="button"
-                  onClick={() => set("paksha", opt.v)}
-                  className={`flex-1 py-2 rounded-xl text-sm font-medium border ${
-                    form.paksha === opt.v
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "border-border text-foreground"
-                  }`}
-                >
-                  {opt.l}
-                </button>
-              ))}
-            </div>
-          </Field>
 
           <button
             onClick={onSubmit}
