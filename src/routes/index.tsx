@@ -369,10 +369,10 @@ function DetailScreen({
         <InfoRow label="பெயர்" value={form.name || "—"} />
         <InfoRow label="பாலினம்" value={form.gender} />
         <InfoRow label="பிறந்த இடம்" value={place.name} />
-        <InfoRow label="நட்சத்திரம்" value={NAKSHATRAS[form.nakshatraIdx]} />
+        <InfoRow label="நட்சத்திரம்" value={NAKSHATRAS[nakshatraIdx]} />
         <InfoRow
           label="பிறப்பு பக்ஷம்"
-          value={form.paksha === "krishna" ? "க்ருஷ்ண பக்ஷம்" : "சுக்ல பக்ஷம்"}
+          value={paksha === "krishna" ? "க்ருஷ்ண பக்ஷம்" : "சுக்ல பக்ஷம்"}
         />
 
         <div className="pt-2 space-y-3">
