@@ -283,9 +283,12 @@ function DetailScreen({
     <>
       <Header title="பஞ்சபக்ஷி" onBack={onBack} />
       <div className="bg-[image:var(--gradient-header)] text-header-foreground pt-2 pb-20 relative">
-        <label className="flex items-center justify-center gap-2 py-3 cursor-pointer">
-          <span>📅</span>
-          <span className="font-semibold text-lg">{formatDate(date)}</span>
+        <label className="mx-4 flex items-center justify-between gap-2 py-2.5 px-4 bg-card/95 rounded-full shadow-[var(--shadow-soft)] cursor-pointer text-foreground mt-1">
+          <span className="text-lg">📅</span>
+          <span className="font-semibold text-base flex-1 text-center">
+            {formatDate(date)}
+          </span>
+          <span className="text-xs font-semibold text-primary">தேதி தேர்வு ▾</span>
           <input
             type="date"
             value={isoDate}
@@ -293,11 +296,11 @@ function DetailScreen({
               const [y, m, d] = e.target.value.split("-").map(Number);
               if (y) setDate(new Date(y, m - 1, d));
             }}
-            className="sr-only"
+            className="absolute inset-0 opacity-0 cursor-pointer"
+            style={{ colorScheme: "light" }}
           />
-          <span className="text-xs opacity-80">▾ மாற்று</span>
         </label>
-        <div className="text-center text-xs opacity-90 -mt-1 mb-2">{weekdayTa}</div>
+        <div className="text-center text-xs opacity-90 mt-2 mb-3">{weekdayTa}</div>
         <div className="mx-4 bg-card rounded-full shadow-[var(--shadow-soft)] flex overflow-hidden p-1">
           <button
             onClick={() => shiftDay(-1)}
