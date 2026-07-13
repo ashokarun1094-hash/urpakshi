@@ -58,8 +58,16 @@ interface FormData {
   minute: string;
   meridiem: "AM" | "PM";
   placeId: string;
-  nakshatraIdx: number;
-  paksha: "shukla" | "krishna";
+}
+
+function parseBirthDate(f: FormData): Date | null {
+  const y = Number(f.year), m = Number(f.month), d = Number(f.day);
+  if (!y || !m || !d) return null;
+  let h = Number(f.hour) || 0;
+  const min = Number(f.minute) || 0;
+  if (f.meridiem === "PM" && h < 12) h += 12;
+  if (f.meridiem === "AM" && h === 12) h = 0;
+  return new Date(Date.UTC(y, m - 1, d, h - 5, min - 30)); // IST → UTC
 }
 
 function App() {
@@ -74,15 +82,16 @@ function App() {
     minute: "",
     meridiem: "AM",
     placeId: "dharmapuri",
-    nakshatraIdx: 5,
-    paksha: "krishna",
   });
   const [date, setDate] = useState(new Date());
   const [period, setPeriod] = useState<"day" | "night">("day");
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
   const place = PLACES.find((p) => p.id === form.placeId) ?? PLACES[0];
-  const janma: Bird = janmaPakshi(form.nakshatraIdx, form.paksha);
+  const birth = parseBirthDate(form);
+  const nakshatraIdx = birth ? nakshatraFromDate(birth) : 0;
+  const paksha = birth ? pakshaFromBirth(birth) : "shukla";
+  const janma: Bird = janmaPakshi(nakshatraIdx, paksha);
 
   return (
     <div className="min-h-screen bg-background flex justify-center">
