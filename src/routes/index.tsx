@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   AUSPICIOUS_ACTIVITY,
   ACTIVITY_MEANING,
@@ -315,30 +315,51 @@ function DetailScreen({
   const friend = friendOf(janma, dayPaksha, period);
   const enemy = enemyOf(janma, dayPaksha, period);
 
-  const isoDate = date.toISOString().slice(0, 10);
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  const isoDate = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
   const weekdayTa = ["ஞாயிறு", "திங்கள்", "செவ்வாய்", "புதன்", "வியாழன்", "வெள்ளி", "சனி"][
     date.getDay()
   ];
+  const dateInputRef = useRef<HTMLInputElement>(null);
+  const openPicker = () => {
+    const el = dateInputRef.current;
+    if (!el) return;
+    if (typeof el.showPicker === "function") {
+      try {
+        el.showPicker();
+        return;
+      } catch {
+        /* fall through */
+      }
+    }
+    el.focus();
+    el.click();
+  };
 
   return (
     <>
       <Header title="பஞ்சபக்ஷி" onBack={onBack} />
       <div className="bg-[image:var(--gradient-header)] text-header-foreground pt-2 pb-20 relative">
-        <label className="relative mx-4 flex items-center justify-between gap-2 py-2.5 px-4 bg-card/95 rounded-full shadow-[var(--shadow-soft)] cursor-pointer text-foreground mt-1">
+        <button
+          type="button"
+          onClick={openPicker}
+          className="relative mx-4 flex items-center justify-between gap-2 py-2.5 px-4 bg-card/95 rounded-full shadow-[var(--shadow-soft)] cursor-pointer text-foreground mt-1 w-[calc(100%-2rem)]"
+        >
           <span className="text-lg">📅</span>
           <span className="font-semibold text-base flex-1 text-center">{formatDate(date)}</span>
           <span className="text-xs font-semibold text-primary">தேதி தேர்வு ▾</span>
           <input
+            ref={dateInputRef}
             type="date"
             value={isoDate}
             onChange={(e) => {
               const [y, m, d] = e.target.value.split("-").map(Number);
-              if (y) setDate(new Date(y, m - 1, d));
+              if (y && m && d) setDate(new Date(y, m - 1, d));
             }}
-            className="absolute inset-0 opacity-0 cursor-pointer"
-            style={{ colorScheme: "light" }}
+            className="absolute right-2 bottom-0 w-1 h-1 opacity-0 pointer-events-none"
+            tabIndex={-1}
           />
-        </label>
+        </button>
         <div className="text-center text-xs opacity-90 mt-2 mb-3">
           {weekdayTa} • {place.name}
         </div>
