@@ -618,6 +618,8 @@ function SubTimingsScreen({
   period,
   place,
   janma,
+  paksha,
+  sunOverride,
   focusIdx,
   onBack,
 }: {
@@ -625,12 +627,14 @@ function SubTimingsScreen({
   period: "day" | "night";
   place: Place;
   janma: Bird;
+  paksha: "shukla" | "krishna";
+  sunOverride: SunOverride;
   focusIdx: number;
   onBack: () => void;
 }) {
   const slots = useMemo(
-    () => computeSlots(date, period, place, janma),
-    [date, period, place, janma]
+    () => computeSlots(date, period, place, janma, paksha, toSunMinutes(sunOverride)),
+    [date, period, place, janma, paksha, sunOverride]
   );
   const focus = slots[focusIdx];
   const prev = slots.slice(0, focusIdx);
