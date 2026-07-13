@@ -264,26 +264,52 @@ function DetailScreen({
     setDate(d);
   };
 
+  const isoDate = date.toISOString().slice(0, 10);
+  const weekdayTa = ["ஞாயிறு", "திங்கள்", "செவ்வாய்", "புதன்", "வியாழன்", "வெள்ளி", "சனி"][
+    date.getDay()
+  ];
+  const nakshatras = [
+    "அஸ்வினி", "பரணி", "கார்த்திகை", "ரோகிணி", "மிருகசீரிடம்", "திருவாதிரை", "புனர்பூசம்",
+    "பூசம்", "ஆயில்யம்", "மகம்", "பூரம்", "உத்திரம்", "ஹஸ்தம்", "சித்திரை",
+  ];
+  const dayIdx = Math.floor(
+    (date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / 86400000
+  );
+  const nakshatra = nakshatras[dayIdx % nakshatras.length];
+  const tithi = ((dayIdx % 15) + 1) + " திதி";
+  const rasi = ["மேஷம்", "ரிஷபம்", "மிதுனம்", "கடகம்", "சிம்மம்", "கன்னி"][dayIdx % 6];
+
   return (
     <>
       <Header title="பஞ்சபக்ஷி" onBack={onBack} />
-      <div className="bg-header text-header-foreground pt-2 pb-16 relative">
-        <div className="flex items-center justify-center gap-2 py-3">
+      <div className="bg-[image:var(--gradient-header)] text-header-foreground pt-2 pb-20 relative">
+        <label className="flex items-center justify-center gap-2 py-3 cursor-pointer">
           <span>📅</span>
           <span className="font-semibold text-lg">{formatDate(date)}</span>
-        </div>
-        <div className="mx-4 bg-white rounded-full shadow-md flex overflow-hidden">
+          <input
+            type="date"
+            value={isoDate}
+            onChange={(e) => {
+              const [y, m, d] = e.target.value.split("-").map(Number);
+              if (y) setDate(new Date(y, m - 1, d));
+            }}
+            className="sr-only"
+          />
+          <span className="text-xs opacity-80">▾ மாற்று</span>
+        </label>
+        <div className="text-center text-xs opacity-90 -mt-1 mb-2">{weekdayTa}</div>
+        <div className="mx-4 bg-card rounded-full shadow-[var(--shadow-soft)] flex overflow-hidden p-1">
           <button
             onClick={() => shiftDay(-1)}
-            className="flex-1 py-3 text-sm font-semibold bg-primary/70 text-foreground rounded-full"
+            className="flex-1 py-2.5 text-sm font-semibold bg-primary/80 text-primary-foreground rounded-full"
           >
-            முந்தைய தேதி
+            ← முந்தைய தேதி
           </button>
           <button
             onClick={() => shiftDay(1)}
-            className="flex-1 py-3 text-sm font-semibold text-foreground"
+            className="flex-1 py-2.5 text-sm font-semibold text-foreground"
           >
-            அடுத்த தேதி
+            அடுத்த தேதி →
           </button>
         </div>
         <svg
@@ -295,16 +321,35 @@ function DetailScreen({
         </svg>
       </div>
 
-      <div className="p-6 space-y-5">
+      <div className="p-6 space-y-4">
         <InfoRow label="பெயர்" value={form.name || "—"} />
+        <InfoRow label="பாலினம்" value={form.gender} />
         <InfoRow label="பிறந்த இடம்" value={form.place || "—"} />
-        <InfoRow label="நட்சத்திரம்" value="திருவாதிரை" />
+        <InfoRow
+          label="பிறந்த தேதி"
+          value={
+            form.day && form.month && form.year
+              ? `${form.day}-${form.month}-${form.year}`
+              : "—"
+          }
+        />
+        <InfoRow
+          label="பிறந்த நேரம்"
+          value={
+            form.hour && form.minute ? `${form.hour}:${form.minute} ${form.meridiem}` : "—"
+          }
+        />
+        <div className="border-t border-border my-2" />
+        <InfoRow label="வாரம்" value={weekdayTa} />
+        <InfoRow label="நட்சத்திரம்" value={nakshatra} />
+        <InfoRow label="ராசி" value={rasi} />
+        <InfoRow label="திதி" value={tithi} />
         <InfoRow label="பிறப்பு பக்ஷம்" value="க்ருஷ்ண பக்ஷம்" />
         <InfoRow label="நடப்பு பக்ஷி" value={pakshi.name} valueColor={pakshi.color} withDot />
 
         <button
           onClick={onView}
-          className="w-full bg-primary text-primary-foreground font-semibold py-3 rounded-full shadow-md mt-4"
+          className="w-full bg-[image:var(--gradient-primary)] text-primary-foreground font-semibold py-3.5 rounded-full shadow-[var(--shadow-card)] mt-4"
         >
           பட்சியின் நிலைகளை காண்க →
         </button>
