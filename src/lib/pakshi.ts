@@ -55,29 +55,28 @@ export type Nakshatra = (typeof NAKSHATRAS)[number];
 // Classical Pancha Pakshi Shastra janma-pakshi tables. Nakshatra index uses
 // the Vedic ordering starting from Ashwini (0). Counts: 5+6+6+5+5 = 27.
 //
-// Shukla Paksha:
-//   வல்லூறு (Vulture)  : Bharani..Ardra           (1..5)
-//   ஆந்தை (Owl)         : Punarvasu..Uttaraphalguni (6..11)
-//   காகம் (Crow)        : Hasta..Jyeshta            (12..17)
-//   கோழி (Cock)         : Mula..Dhanishta           (18..22)
-//   மயில் (Peacock)     : Shatabhisha..Ashwini      (23..26, 0)
+// Shukla Paksha (from user reference table):
+//   வல்லூறு (Vulture) 5 : Ashwini..Mrigashira        (0..4)
+//   ஆந்தை  (Owl)     6 : Ardra..Purvaphalguni       (5..10)
+//   காகம்   (Crow)    5 : Uttaraphalguni..Vishakha  (11..15)
+//   கோழி   (Cock)    5 : Anuradha..Uttarashadha    (16..20)
+//   மயில்   (Peacock) 6 : Shravana..Revati          (21..26)
 const JANMA_SHUKLA: Bird[] = [
-  "மயில்",                                                       // 0  Ashwini
-  "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு",         // 1..5
-  "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை",         // 6..11
-  "காகம்", "காகம்", "காகம்", "காகம்", "காகம்", "காகம்",           // 12..17
-  "கோழி", "கோழி", "கோழி", "கோழி", "கோழி",                       // 18..22
-  "மயில்", "மயில்", "மயில்", "மயில்",                           // 23..26
+  "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு",           // 0..4
+  "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை",           // 5..10
+  "காகம்", "காகம்", "காகம்", "காகம்", "காகம்",                     // 11..15
+  "கோழி", "கோழி", "கோழி", "கோழி", "கோழி",                         // 16..20
+  "மயில்", "மயில்", "மயில்", "மயில்", "மயில்", "மயில்",             // 21..26
 ];
 
-// Krishna Paksha: birds rotate one group forward (Peacock ← first group).
+// Krishna Paksha: each bird shifts one step forward in the cycle
+// Vulture→Owl, Owl→Crow, Crow→Cock, Cock→Peacock, Peacock→Vulture.
 const JANMA_KRISHNA: Bird[] = [
-  "கோழி",                                                       // 0  Ashwini
-  "மயில்", "மயில்", "மயில்", "மயில்", "மயில்",                    // 1..5
-  "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு", // 6..11
-  "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை",         // 12..17
-  "காகம்", "காகம்", "காகம்", "காகம்", "காகம்",                   // 18..22
-  "கோழி", "கோழி", "கோழி", "கோழி",                             // 23..26
+  "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை",                   // 0..4
+  "காகம்", "காகம்", "காகம்", "காகம்", "காகம்", "காகம்",             // 5..10
+  "கோழி", "கோழி", "கோழி", "கோழி", "கோழி",                         // 11..15
+  "மயில்", "மயில்", "மயில்", "மயில்", "மயில்",                    // 16..20
+  "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு", // 21..26
 ];
 
 export function janmaPakshi(nakIdx: number, paksha: "shukla" | "krishna"): Bird {
