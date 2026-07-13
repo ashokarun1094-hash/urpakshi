@@ -28,6 +28,7 @@
   --color-inauspicious: var(--inauspicious);
   --color-header: var(--header);
   --color-header-foreground: var(--header-foreground);
+  --color-header-glow: var(--header-glow);
   --color-panel: var(--panel);
   --color-pill: var(--pill);
   --color-pill-foreground: var(--pill-foreground);
