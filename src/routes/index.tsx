@@ -13,6 +13,8 @@ import {
   formatRange,
   friendOf,
   janmaPakshi,
+  nakshatraFromDate,
+  pakshaFromBirth,
   pakshaFromDate,
   type Activity,
   type Bird,
