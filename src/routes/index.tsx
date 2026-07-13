@@ -568,7 +568,7 @@ function MiniSlot({
 
 function Header({ title, onBack }: { title: string; onBack?: () => void }) {
   return (
-    <div className="bg-header text-header-foreground px-4 py-4 flex items-center gap-3 relative">
+    <div className="bg-[image:var(--gradient-header)] text-header-foreground px-4 py-4 flex items-center gap-3 relative shadow-[var(--shadow-soft)]">
       {onBack ? (
         <button onClick={onBack} className="text-2xl leading-none">
           ←
