@@ -8,18 +8,31 @@ import {
   PLACES,
   computeSlots,
   currentActivity,
+  defaultSunTimes,
   enemyOf,
   formatDate,
   formatRange,
   friendOf,
   janmaPakshi,
+  minutesToTime,
   nakshatraFromDate,
   pakshaFromBirth,
   pakshaFromDate,
+  timeToMinutes,
   type Activity,
   type Bird,
   type Place,
 } from "@/lib/pakshi";
+
+type SunOverride = { sunrise: string; sunset: string } | null;
+
+function toSunMinutes(o: SunOverride) {
+  if (!o) return undefined;
+  const sr = timeToMinutes(o.sunrise);
+  const ss = timeToMinutes(o.sunset);
+  if (sr == null || ss == null) return undefined;
+  return { sunrise: sr, sunset: ss };
+}
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -86,6 +99,9 @@ function App() {
   const [date, setDate] = useState(new Date());
   const [period, setPeriod] = useState<"day" | "night">("day");
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+  const [sunOverride, setSunOverride] = useState<{ sunrise: string; sunset: string } | null>(
+    null
+  );
 
   const place = PLACES.find((p) => p.id === form.placeId) ?? PLACES[0];
   const birth = parseBirthDate(form);
@@ -118,6 +134,9 @@ function App() {
             period={period}
             place={place}
             janma={janma}
+            paksha={paksha}
+            sunOverride={sunOverride}
+            setSunOverride={setSunOverride}
             setPeriod={setPeriod}
             onBack={() => setScreen("detail")}
             onExpand={(i) => {
@@ -132,6 +151,8 @@ function App() {
             period={period}
             place={place}
             janma={janma}
+            paksha={paksha}
+            sunOverride={sunOverride}
             focusIdx={expandedIdx}
             onBack={() => setScreen("timings")}
           />
@@ -307,8 +328,8 @@ function DetailScreen({
   const period: "day" | "night" = date.getHours() >= 6 && date.getHours() < 18 ? "day" : "night";
   const dayPaksha = pakshaFromDate(date);
   const slots = useMemo(
-    () => computeSlots(date, period, place, janma),
-    [date, period, place, janma]
+    () => computeSlots(date, period, place, janma, paksha),
+    [date, period, place, janma, paksha]
   );
   const current = currentActivity(slots, new Date());
   const currentBird: Bird = current?.bird ?? janma;
@@ -453,6 +474,9 @@ function TimingsScreen({
   period,
   place,
   janma,
+  paksha,
+  sunOverride,
+  setSunOverride,
   setPeriod,
   onBack,
   onExpand,
@@ -461,13 +485,21 @@ function TimingsScreen({
   period: "day" | "night";
   place: Place;
   janma: Bird;
+  paksha: "shukla" | "krishna";
+  sunOverride: SunOverride;
+  setSunOverride: (o: SunOverride) => void;
   setPeriod: (p: "day" | "night") => void;
   onBack: () => void;
   onExpand: (i: number) => void;
 }) {
+  const auto = useMemo(() => defaultSunTimes(date, place), [date, place]);
+  const effective = sunOverride ?? {
+    sunrise: minutesToTime(auto.sunrise),
+    sunset: minutesToTime(auto.sunset),
+  };
   const slots = useMemo(
-    () => computeSlots(date, period, place, janma),
-    [date, period, place, janma]
+    () => computeSlots(date, period, place, janma, paksha, toSunMinutes(sunOverride)),
+    [date, period, place, janma, paksha, sunOverride]
   );
 
   return (
@@ -476,6 +508,44 @@ function TimingsScreen({
       <div className="bg-[image:var(--gradient-header)] pt-2 pb-6 flex justify-center gap-4">
         <PeriodPill label="பகல்" active={period === "day"} onClick={() => setPeriod("day")} />
         <PeriodPill label="இரவு" active={period === "night"} onClick={() => setPeriod("night")} />
+      </div>
+
+      <div className="mx-4 mt-4 rounded-2xl border border-border bg-card p-3">
+        <div className="text-xs font-semibold text-muted-foreground mb-2 flex items-center justify-between">
+          <span>சூரிய உதயம் / அஸ்தமனம் ({paksha === "krishna" ? "தேய் பிறை" : "வளர் பிறை"})</span>
+          {sunOverride && (
+            <button
+              onClick={() => setSunOverride(null)}
+              className="text-primary text-[11px] font-semibold"
+            >
+              Auto ↺
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="flex flex-col text-[11px] text-muted-foreground">
+            சூரிய உதயம்
+            <input
+              type="time"
+              value={effective.sunrise}
+              onChange={(e) =>
+                setSunOverride({ sunrise: e.target.value, sunset: effective.sunset })
+              }
+              className="mt-1 border border-border rounded-lg px-2 py-1.5 text-sm text-foreground bg-background"
+            />
+          </label>
+          <label className="flex flex-col text-[11px] text-muted-foreground">
+            சூரிய அஸ்தமனம்
+            <input
+              type="time"
+              value={effective.sunset}
+              onChange={(e) =>
+                setSunOverride({ sunrise: effective.sunrise, sunset: e.target.value })
+              }
+              className="mt-1 border border-border rounded-lg px-2 py-1.5 text-sm text-foreground bg-background"
+            />
+          </label>
+        </div>
       </div>
 
       <div className="bg-panel m-4 p-4 rounded-2xl grid grid-cols-2 gap-x-4 gap-y-6">
@@ -497,7 +567,9 @@ function TimingsScreen({
       </div>
 
       <p className="text-[11px] text-muted-foreground text-center px-6 pb-6 leading-relaxed">
-        சூரிய உதயம் / அஸ்தமனம் இருப்பிடத்தை பொறுத்து கணக்கிடப்படுகிறது ({place.name}).
+        {sunOverride
+          ? "தனிப்பயன் சூரிய நேரங்களால் கணக்கிடப்பட்டது."
+          : `${place.name} இருப்பிடத்திற்கு தானாக கணக்கிடப்பட்டது.`}
       </p>
     </>
   );
@@ -546,6 +618,8 @@ function SubTimingsScreen({
   period,
   place,
   janma,
+  paksha,
+  sunOverride,
   focusIdx,
   onBack,
 }: {
@@ -553,12 +627,14 @@ function SubTimingsScreen({
   period: "day" | "night";
   place: Place;
   janma: Bird;
+  paksha: "shukla" | "krishna";
+  sunOverride: SunOverride;
   focusIdx: number;
   onBack: () => void;
 }) {
   const slots = useMemo(
-    () => computeSlots(date, period, place, janma),
-    [date, period, place, janma]
+    () => computeSlots(date, period, place, janma, paksha, toSunMinutes(sunOverride)),
+    [date, period, place, janma, paksha, sunOverride]
   );
   const focus = slots[focusIdx];
   const prev = slots.slice(0, focusIdx);
