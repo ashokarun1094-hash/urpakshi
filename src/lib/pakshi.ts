@@ -214,20 +214,47 @@ export function computeSlots(
   const pakshaShift = paksha === "krishna" ? 2 : 0;
   const activityOrder = rot(ACTIVITIES, startActIdx + pakshaShift);
 
+  // Shukla paksha சூட்சம பட்சி uses classical weighted durations (per 144 min slot).
+  // Day: அரசு 48, உண்ணல் 30, நடத்தல் 36, உறங்குதல் 18, மரணம் 12
+  // Night: அரசு 24, உண்ணல் 30, நடத்தல் 30, உறங்குதல் 24, மரணம் 36
+  const SUB_DUR_DAY: Record<Activity, number> = {
+    ஆட்சி: 48, உண்ணல்: 30, நடத்தல்: 36, உறங்குதல்: 18, மரணம்: 12,
+  };
+  const SUB_DUR_NIGHT: Record<Activity, number> = {
+    ஆட்சி: 24, உண்ணல்: 30, நடத்தல்: 30, உறங்குதல்: 24, மரணம்: 36,
+  };
+  const subDurTable = period === "day" ? SUB_DUR_DAY : SUB_DUR_NIGHT;
+
   return orderedBirds.map((bird, i) => {
     const s = start + i * chunk;
     const e = s + chunk;
     const act = activityOrder[i];
-    const subChunk = chunk / 5;
-    // Sub-slot ordering also depends on paksha, so சூட்சம பட்சி differs.
+    // Sub-slot ordering depends on paksha, so சூட்சம பட்சி differs.
     const subBirds = rot(birdOrder, i + (paksha === "krishna" ? 2 : 0));
     const subActs = rot(activityOrder, i + (paksha === "krishna" ? 1 : 0));
-    const subs = subBirds.map((b, j) => ({
-      bird: b,
-      activity: subActs[j],
-      start: s + j * subChunk,
-      end: s + (j + 1) * subChunk,
-    }));
+
+    let subs;
+    if (paksha === "shukla") {
+      // Weighted durations scaled to actual main-slot length.
+      const scale = chunk / 144;
+      let cursor = s;
+      subs = subBirds.map((b, j) => {
+        const dur = (subDurTable[subActs[j]] ?? 28.8) * scale;
+        const ss = cursor;
+        const se = cursor + dur;
+        cursor = se;
+        return { bird: b, activity: subActs[j], start: ss, end: se };
+      });
+    } else {
+      // Krishna: uniform sub-slots (until a separate table is provided).
+      const subChunk = chunk / 5;
+      subs = subBirds.map((b, j) => ({
+        bird: b,
+        activity: subActs[j],
+        start: s + j * subChunk,
+        end: s + (j + 1) * subChunk,
+      }));
+    }
     return { bird, activity: act, start: s, end: e, subs };
   });
 }
