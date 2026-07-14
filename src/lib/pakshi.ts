@@ -195,10 +195,12 @@ export function computeSlots(
   overrideSun?: { sunrise: number; sunset: number }
 ): Slot[] {
   const { sunrise, sunset } = overrideSun ?? sunTimes(date, place.lat, place.lon);
+  // Classical Pancha Pakshi: each main பட்சி slot is exactly 2h 24min (144 min),
+  // 5 slots × 144 = 720 min = 12h fixed, regardless of actual day/night length.
+  const chunk = 144;
   const start = period === "day" ? sunrise : sunset;
-  const end = period === "day" ? sunset : sunrise + 24 * 60;
-  const total = end - start;
-  const chunk = total / 5;
+  const end = start + chunk * 5;
+  void end;
 
   const weekday = date.getDay();
   // Bird order flips in Krishna paksha — this is why sub-timings differ
