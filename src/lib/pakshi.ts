@@ -214,47 +214,54 @@ export function computeSlots(
   const pakshaShift = paksha === "krishna" ? 2 : 0;
   const activityOrder = rot(ACTIVITIES, startActIdx + pakshaShift);
 
-  // Shukla paksha சூட்சம பட்சி uses classical weighted durations (per 144 min slot).
-  // Day: அரசு 48, உண்ணல் 30, நடத்தல் 36, உறங்குதல் 18, மரணம் 12
-  // Night: அரசு 24, உண்ணல் 30, நடத்தல் 30, உறங்குதல் 24, மரணம் 36
-  const SUB_DUR_DAY: Record<Activity, number> = {
+  // சூட்சம பட்சி weighted durations (per 144 min main slot).
+  // வளர்பிறை (Shukla) — Day: அரசு 48, உண்ணல் 30, நடத்தல் 36, உறங்குதல் 18, மரணம் 12
+  //                     Night: அரசு 24, உண்ணல் 30, நடத்தல் 30, உறங்குதல் 24, மரணம் 36
+  // தேய்பிறை (Krishna) — Day: உறங்குதல் 12, நடத்தல் 36, மரணம் 30, ஆட்சி 18, உண்ணல் 48
+  //                      Night: உறங்குதல் 18, நடத்தல் 42, மரணம் 24, ஆட்சி 18, உண்ணல் 42
+  const SUB_DUR_SHUKLA_DAY: Record<Activity, number> = {
     ஆட்சி: 48, உண்ணல்: 30, நடத்தல்: 36, உறங்குதல்: 18, மரணம்: 12,
   };
-  const SUB_DUR_NIGHT: Record<Activity, number> = {
+  const SUB_DUR_SHUKLA_NIGHT: Record<Activity, number> = {
     ஆட்சி: 24, உண்ணல்: 30, நடத்தல்: 30, உறங்குதல்: 24, மரணம்: 36,
   };
-  const subDurTable = period === "day" ? SUB_DUR_DAY : SUB_DUR_NIGHT;
+  const SUB_DUR_KRISHNA_DAY: Record<Activity, number> = {
+    உறங்குதல்: 12, நடத்தல்: 36, மரணம்: 30, ஆட்சி: 18, உண்ணல்: 48,
+  };
+  const SUB_DUR_KRISHNA_NIGHT: Record<Activity, number> = {
+    உறங்குதல்: 18, நடத்தல்: 42, மரணம்: 24, ஆட்சி: 18, உண்ணல்: 42,
+  };
+
+  // Fixed தேய்பிறை sub-activity sequence (per reference table).
+  const KRISHNA_SUB_ORDER: Activity[] = [
+    "உறங்குதல்", "நடத்தல்", "மரணம்", "ஆட்சி", "உண்ணல்",
+  ];
+
+  const subDurTable =
+    paksha === "krishna"
+      ? period === "day" ? SUB_DUR_KRISHNA_DAY : SUB_DUR_KRISHNA_NIGHT
+      : period === "day" ? SUB_DUR_SHUKLA_DAY : SUB_DUR_SHUKLA_NIGHT;
 
   return orderedBirds.map((bird, i) => {
     const s = start + i * chunk;
     const e = s + chunk;
     const act = activityOrder[i];
-    // Sub-slot ordering depends on paksha, so சூட்சம பட்சி differs.
+    // Sub-slot ordering depends on paksha.
     const subBirds = rot(birdOrder, i + (paksha === "krishna" ? 2 : 0));
-    const subActs = rot(activityOrder, i + (paksha === "krishna" ? 1 : 0));
+    const subActs =
+      paksha === "krishna"
+        ? rot(KRISHNA_SUB_ORDER, i)
+        : rot(activityOrder, i);
 
-    let subs;
-    if (paksha === "shukla") {
-      // Weighted durations scaled to actual main-slot length.
-      const scale = chunk / 144;
-      let cursor = s;
-      subs = subBirds.map((b, j) => {
-        const dur = (subDurTable[subActs[j]] ?? 28.8) * scale;
-        const ss = cursor;
-        const se = cursor + dur;
-        cursor = se;
-        return { bird: b, activity: subActs[j], start: ss, end: se };
-      });
-    } else {
-      // Krishna: uniform sub-slots (until a separate table is provided).
-      const subChunk = chunk / 5;
-      subs = subBirds.map((b, j) => ({
-        bird: b,
-        activity: subActs[j],
-        start: s + j * subChunk,
-        end: s + (j + 1) * subChunk,
-      }));
-    }
+    const scale = chunk / 144;
+    let cursor = s;
+    const subs = subBirds.map((b, j) => {
+      const dur = (subDurTable[subActs[j]] ?? 28.8) * scale;
+      const ss = cursor;
+      const se = cursor + dur;
+      cursor = se;
+      return { bird: b, activity: subActs[j], start: ss, end: se };
+    });
     return { bird, activity: act, start: s, end: e, subs };
   });
 }
