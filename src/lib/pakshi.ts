@@ -199,28 +199,47 @@ export function computeSlots(
   // 5 slots × 144 = 720 min = 12h fixed, regardless of actual day/night length.
   const chunk = 144;
   const start = period === "day" ? sunrise : sunset;
-  const end = start + chunk * 5;
-  void end;
 
   const weekday = date.getDay();
-  // Bird order flips in Krishna paksha — this is why sub-timings differ
-  // between வளர் பிறை and தேய் பிறை for the same janma bird.
-  const baseOrder = period === "day" ? BIRD_ORDER_DAY : BIRD_ORDER_NIGHT;
-  const birdOrder = paksha === "krishna" ? [...baseOrder].reverse() : baseOrder;
-  const janmaBirdIndex = birdOrder.indexOf(janma);
-  const orderedBirds = rot(birdOrder, janmaBirdIndex >= 0 ? janmaBirdIndex : 0);
 
+  /* ------------------------------------------------------------------
+   * தேய்பிறை (Krishna) tables — matches the reference PDF exactly.
+   *   DAY   bird cols:  கோழி, ஆந்தை, மயில், காகம், வல்லூறு
+   *         act seq  :  ஊண்(உண்ணல்), சாவு(மரணம்), துயில்(உறங்குதல்),
+   *                     அரசு(ஆட்சி), நடை(நடத்தல்)
+   *   NIGHT bird cols:  வல்லூறு, மயில், கோழி, காகம், ஆந்தை
+   *         act seq  :  ஊண், துயில், நடை, சாவு, அரசு
+   * Rule: bird at column c in slot i has activity acts[(c - adhikaram + i) mod 5].
+   * ------------------------------------------------------------------ */
+  const K_DAY_BIRDS: Bird[]     = ["கோழி", "ஆந்தை", "மயில்", "காகம்", "வல்லூறு"];
+  const K_NIGHT_BIRDS: Bird[]   = ["வல்லூறு", "மயில்", "கோழி", "காகம்", "ஆந்தை"];
+  const K_DAY_ACTS: Activity[]  = ["உண்ணல்", "மரணம்", "உறங்குதல்", "ஆட்சி", "நடத்தல்"];
+  const K_NIGHT_ACTS: Activity[]= ["உண்ணல்", "உறங்குதல்", "நடத்தல்", "மரணம்", "ஆட்சி"];
+  // Weekday → adhikaram (ruling) bird for slot 0.
+  const K_DAY_ADHI: Record<number, Bird> = {
+    0: "கோழி", 2: "கோழி",        // ஞாயிறு, செவ்வாய்
+    1: "மயில்", 6: "மயில்",       // திங்கள், சனி
+    3: "காகம்",                   // புதன்
+    4: "ஆந்தை",                   // வியாழன்
+    5: "வல்லூறு",                 // வெள்ளி
+  };
+  const K_NIGHT_ADHI: Record<number, Bird> = {
+    0: "வல்லூறு", 2: "வல்லூறு",   // ஞாயிறு, செவ்வாய்
+    1: "கோழி", 6: "கோழி",         // திங்கள், சனி
+    3: "ஆந்தை",                   // புதன்
+    4: "காகம்",                   // வியாழன்
+    5: "மயில்",                   // வெள்ளி
+  };
+
+  /* ---------------- Shukla paksha (legacy — sample) ---------------- */
+  const baseOrder = period === "day" ? BIRD_ORDER_DAY : BIRD_ORDER_NIGHT;
+  const janmaBirdIndex_S = baseOrder.indexOf(janma);
+  const orderedBirds_S = rot(baseOrder, janmaBirdIndex_S >= 0 ? janmaBirdIndex_S : 0);
   const startAct = DAY_START_ACTIVITY[weekday] ?? "ஆட்சி";
   const startActIdx = ACTIVITIES.indexOf(startAct);
-  // Krishna paksha shifts the activity order by 2 (classical Ashwini-shift rule).
-  const pakshaShift = paksha === "krishna" ? 2 : 0;
-  const activityOrder = rot(ACTIVITIES, startActIdx + pakshaShift);
+  const activityOrder_S = rot(ACTIVITIES, startActIdx);
 
-  // சூட்சம பட்சி weighted durations (per 144 min main slot).
-  // வளர்பிறை (Shukla) — Day: அரசு 48, உண்ணல் 30, நடத்தல் 36, உறங்குதல் 18, மரணம் 12
-  //                     Night: அரசு 24, உண்ணல் 30, நடத்தல் 30, உறங்குதல் 24, மரணம் 36
-  // தேய்பிறை (Krishna) — Day: உறங்குதல் 12, நடத்தல் 36, மரணம் 30, ஆட்சி 18, உண்ணல் 48
-  //                      Night: உறங்குதல் 18, நடத்தல் 42, மரணம் 24, ஆட்சி 18, உண்ணல் 42
+  // சூட்சம durations (minutes within a 144-min main slot).
   const SUB_DUR_SHUKLA_DAY: Record<Activity, number> = {
     ஆட்சி: 48, உண்ணல்: 30, நடத்தல்: 36, உறங்குதல்: 18, மரணம்: 12,
   };
@@ -234,31 +253,55 @@ export function computeSlots(
     உறங்குதல்: 18, நடத்தல்: 42, மரணம்: 24, ஆட்சி: 18, உண்ணல்: 42,
   };
 
-  // Fixed தேய்பிறை sub-activity sequence (per reference table).
-  const KRISHNA_SUB_ORDER: Activity[] = [
-    "உறங்குதல்", "நடத்தல்", "மரணம்", "ஆட்சி", "உண்ணல்",
-  ];
-
   const subDurTable =
     paksha === "krishna"
       ? period === "day" ? SUB_DUR_KRISHNA_DAY : SUB_DUR_KRISHNA_NIGHT
       : period === "day" ? SUB_DUR_SHUKLA_DAY : SUB_DUR_SHUKLA_NIGHT;
 
-  return orderedBirds.map((bird, i) => {
+  // ---------- Krishna paksha (PDF-exact) ----------
+  if (paksha === "krishna") {
+    const birds = period === "day" ? K_DAY_BIRDS : K_NIGHT_BIRDS;
+    const acts  = period === "day" ? K_DAY_ACTS  : K_NIGHT_ACTS;
+    const adhi  = period === "day" ? K_DAY_ADHI  : K_NIGHT_ADHI;
+    const adhiCol = birds.indexOf(adhi[weekday] ?? birds[0]);
+    const janmaCol = Math.max(0, birds.indexOf(janma));
+
+    // Activity of bird at column c during slot i (matches PDF tables).
+    const actAt = (c: number, i: number) =>
+      acts[((c - adhiCol + i) % 5 + 5) % 5];
+
+    return Array.from({ length: 5 }, (_, i) => {
+      // Diagonal read: slot i's main bird = janma shifted by i.
+      const c = (janmaCol + i) % 5;
+      const s = start + i * chunk;
+      const e = s + chunk;
+      const bird = birds[c];
+      const activity = actAt(c, i);
+
+      let cursor = s;
+      const subs = Array.from({ length: 5 }, (_, j) => {
+        const subC = (c + j) % 5;                       // sub-bird column
+        const subAct = actAt(subC, i + j);              // sub-activity per table
+        const dur = subDurTable[subAct] ?? 28.8;
+        const ss = cursor;
+        const se = cursor + dur;
+        cursor = se;
+        return { bird: birds[subC], activity: subAct, start: ss, end: se };
+      });
+      return { bird, activity, start: s, end: e, subs };
+    });
+  }
+
+  // ---------- Shukla paksha (sample rotation until user provides tables) ----------
+  return orderedBirds_S.map((bird, i) => {
     const s = start + i * chunk;
     const e = s + chunk;
-    const act = activityOrder[i];
-    // Sub-slot ordering depends on paksha.
-    const subBirds = rot(birdOrder, i + (paksha === "krishna" ? 2 : 0));
-    const subActs =
-      paksha === "krishna"
-        ? rot(KRISHNA_SUB_ORDER, i)
-        : rot(activityOrder, i);
-
-    const scale = chunk / 144;
+    const act = activityOrder_S[i];
+    const subBirds = rot(baseOrder, i);
+    const subActs = rot(activityOrder_S, i);
     let cursor = s;
     const subs = subBirds.map((b, j) => {
-      const dur = (subDurTable[subActs[j]] ?? 28.8) * scale;
+      const dur = subDurTable[subActs[j]] ?? 28.8;
       const ss = cursor;
       const se = cursor + dur;
       cursor = se;
@@ -267,6 +310,8 @@ export function computeSlots(
     return { bird, activity: act, start: s, end: e, subs };
   });
 }
+
+
 
 // Helper: "HH:MM" -> minutes from midnight
 export function timeToMinutes(t: string): number | null {
