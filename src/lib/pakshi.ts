@@ -69,15 +69,9 @@ const JANMA_SHUKLA: Bird[] = [
   "மயில்", "மயில்", "மயில்", "மயில்", "மயில்", "மயில்",             // 21..26
 ];
 
-// Krishna Paksha: each bird shifts one step forward in the cycle
-// Vulture→Owl, Owl→Crow, Crow→Cock, Cock→Peacock, Peacock→Vulture.
-const JANMA_KRISHNA: Bird[] = [
-  "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை", "ஆந்தை",                   // 0..4
-  "காகம்", "காகம்", "காகம்", "காகம்", "காகம்", "காகம்",             // 5..10
-  "கோழி", "கோழி", "கோழி", "கோழி", "கோழி",                         // 11..15
-  "மயில்", "மயில்", "மயில்", "மயில்", "மயில்",                    // 16..20
-  "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு", "வல்லூறு", // 21..26
-];
+// Janma pakshi is the same in both pakshas — only activity/sub-slot
+// rotations differ between Shukla and Krishna.
+const JANMA_KRISHNA: Bird[] = JANMA_SHUKLA;
 
 export function janmaPakshi(nakIdx: number, paksha: "shukla" | "krishna"): Bird {
   const i = ((nakIdx % 27) + 27) % 27;
