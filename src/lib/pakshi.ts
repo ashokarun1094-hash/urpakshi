@@ -291,9 +291,13 @@ export function computeSlots(
   const adhiCol = birds.indexOf(adhiMap[weekday] ?? birds[0]);
   const janmaCol = Math.max(0, birds.indexOf(janma));
 
-  // Activity of bird at column c during slot i (matches PDF/reference tables).
-  const actAt = (c: number, i: number) =>
-    acts[((c - adhiCol + i) % 5 + 5) % 5];
+  // Formula direction: Valarpirai NIGHT reverses (verified against user's
+  // reference photo). Day uses (c - adhi + i); night uses (adhi - c + i).
+  const reverse = period === "night";
+  const actAt = (c: number, i: number) => {
+    const idx = reverse ? (adhiCol - c + i) : (c - adhiCol + i);
+    return acts[((idx % 5) + 5) % 5];
+  };
 
   return Array.from({ length: 5 }, (_, i) => {
     // Diagonal read: slot i's main bird = janma shifted by i.
