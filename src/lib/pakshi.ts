@@ -291,9 +291,9 @@ export function computeSlots(
   const adhiCol = birds.indexOf(adhiMap[weekday] ?? birds[0]);
   const janmaCol = Math.max(0, birds.indexOf(janma));
 
-  // Formula direction: Valarpirai NIGHT reverses (verified against user's
-  // reference photo). Day uses (c - adhi + i); night uses (adhi - c + i).
-  const reverse = period === "night";
+  // Formula direction: Valarpirai (Shukla) NIGHT reverses column direction
+  // per user's reference photo. Other combos keep (c - adhi + i).
+  const reverse = paksha === "shukla" && period === "night";
   const actAt = (c: number, i: number) => {
     const idx = reverse ? (adhiCol - c + i) : (c - adhiCol + i);
     return acts[((idx % 5) + 5) % 5];
