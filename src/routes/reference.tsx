@@ -41,10 +41,10 @@ function Table({
   cfg,
   weekday,
 }: {
-  cfg: PakshaPeriodConfig;
+  cfg: PakshaFullConfig;
   weekday: number;
 }) {
-  const { birds, cell, adhiBird } = buildTable(cfg, weekday);
+  const { birds, cell } = buildTable(cfg, weekday);
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-xs">
@@ -61,14 +61,7 @@ function Table({
         <tbody>
           {birds.map((b, row) => (
             <tr key={b}>
-              <td
-                className={`border p-1 font-medium ${
-                  b === adhiBird ? "bg-primary/20" : ""
-                }`}
-              >
-                {b}
-                {b === adhiBird ? " ★" : ""}
-              </td>
+              <td className="border p-1 font-medium">{b}</td>
               {Array.from({ length: 5 }, (_, i) => (
                 <td key={i} className="border p-1 text-center">
                   {cell(row, i)}
@@ -82,15 +75,22 @@ function Table({
   );
 }
 
-function DurationsRow({ cfg }: { cfg: PakshaPeriodConfig }) {
-  const total = Object.values(cfg.subDur).reduce((a, b) => a + b, 0);
+function DurationsRow({
+  cfg,
+  weekday,
+}: {
+  cfg: PakshaFullConfig;
+  weekday: number;
+}) {
+  const sub = (cfg.weekdays[weekday] ?? cfg.weekdays[0]).subDur;
+  const total = (Object.values(sub) as number[]).reduce((a, b) => a + b, 0);
   return (
     <div className="mt-1 text-[11px] text-muted-foreground">
       சூட்சம நிமிடம்:{" "}
       {(["உண்ணல்", "ஆட்சி", "நடத்தல்", "உறங்குதல்", "மரணம்"] as const).map(
         (a) => (
           <span key={a} className="mr-2">
-            {a} {cfg.subDur[a]}m
+            {a} {sub[a]}m
           </span>
         )
       )}
