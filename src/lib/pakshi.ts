@@ -203,14 +203,12 @@ export function computeSlots(
   const start = period === "day" ? sunrise : sunset;
   const weekday = date.getDay();
 
-  const { birds, acts, adhi, subDur, direction } = cfg;
-  const adhiCol = birds.indexOf(adhi[weekday] ?? birds[0]);
+  const { birds, weekdays } = cfg;
+  const wcfg = weekdays[weekday] ?? weekdays[0];
+  const { grid, subDur } = wcfg;
   const janmaCol = Math.max(0, birds.indexOf(janma));
 
-  const actAt = (c: number, i: number) => {
-    const idx = direction === "backward" ? (adhiCol - c + i) : (c - adhiCol + i);
-    return acts[((idx % 5) + 5) % 5];
-  };
+  const actAt = (c: number, i: number) => grid[c]?.[i] ?? "உண்ணல்";
 
   return Array.from({ length: 5 }, (_, i) => {
     const c = (janmaCol + i) % 5;
@@ -222,7 +220,7 @@ export function computeSlots(
     let cursor = s;
     const subs = Array.from({ length: 5 }, (_, j) => {
       const subC = (c + j) % 5;
-      const subAct = actAt(subC, i + j);
+      const subAct = actAt(subC, (i + j) % 5);
       const dur = subDur[subAct] ?? 28.8;
       const ss = cursor;
       const se = cursor + dur;
