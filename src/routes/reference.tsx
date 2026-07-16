@@ -14,7 +14,7 @@ import {
   KRISHNA,
   WEEKDAY_TA,
   MAIN_SLOT_MIN,
-  type PakshaPeriodConfig,
+  type PakshaFullConfig,
 } from "@/lib/pakshi-config";
 
 export const Route = createFileRoute("/reference")({
@@ -31,19 +31,10 @@ export const Route = createFileRoute("/reference")({
   component: ReferencePage,
 });
 
-/**
- * Compute the 5×5 activity table for a given period config + weekday.
- * Rows = birds (columns of the reference table), Cols = the 5 main slots.
- * Cell contains the activity at (bird row, slot column).
- */
-function buildTable(cfg: PakshaPeriodConfig, weekday: number) {
-  const { birds, acts, adhi, direction } = cfg;
-  const adhiCol = birds.indexOf(adhi[weekday] ?? birds[0]);
-  const cell = (row: number, i: number) => {
-    const idx = direction === "backward" ? adhiCol - row + i : row - adhiCol + i;
-    return acts[((idx % 5) + 5) % 5];
-  };
-  return { birds, cell, adhiBird: adhi[weekday] };
+function buildTable(cfg: PakshaFullConfig, weekday: number) {
+  const w = cfg.weekdays[weekday] ?? cfg.weekdays[0];
+  const cell = (row: number, i: number) => w.grid[row]?.[i] ?? "";
+  return { birds: cfg.birds, cell };
 }
 
 function Table({
