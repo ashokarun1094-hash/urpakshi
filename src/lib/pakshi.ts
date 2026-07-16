@@ -4,6 +4,8 @@
 // in Tamil almanacs. Timings are approximate: sunrise/sunset are computed
 // from a rough NOAA-style formula using the selected location's latitude.
 
+import { getConfig, MAIN_SLOT_MIN } from "./pakshi-config";
+
 export type Bird = "வல்லூறு" | "ஆந்தை" | "காகம்" | "கோழி" | "மயில்";
 export type Activity = "ஆட்சி" | "உண்ணல்" | "நடத்தல்" | "உறங்குதல்" | "மரணம்";
 
