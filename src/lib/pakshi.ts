@@ -198,7 +198,6 @@ export function computeSlots(
 ): Slot[] {
   const { sunrise, sunset } = overrideSun ?? sunTimes(date, place.lat, place.lon);
   // Classical Pancha Pakshi: each main பட்சி slot is exactly 2h 24min (144 min).
-  const { getConfig, MAIN_SLOT_MIN } = require("./pakshi-config") as typeof import("./pakshi-config");
   const cfg = getConfig(paksha, period);
   const chunk = MAIN_SLOT_MIN;
   const start = period === "day" ? sunrise : sunset;
