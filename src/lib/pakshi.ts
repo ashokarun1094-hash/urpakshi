@@ -4,6 +4,8 @@
 // in Tamil almanacs. Timings are approximate: sunrise/sunset are computed
 // from a rough NOAA-style formula using the selected location's latitude.
 
+import { getConfig, MAIN_SLOT_MIN } from "./pakshi-config";
+
 export type Bird = "வல்லூறு" | "ஆந்தை" | "காகம்" | "கோழி" | "மயில்";
 export type Activity = "ஆட்சி" | "உண்ணல்" | "நடத்தல்" | "உறங்குதல்" | "மரணம்";
 
@@ -195,112 +197,22 @@ export function computeSlots(
   overrideSun?: { sunrise: number; sunset: number }
 ): Slot[] {
   const { sunrise, sunset } = overrideSun ?? sunTimes(date, place.lat, place.lon);
-  // Classical Pancha Pakshi: each main பட்சி slot is exactly 2h 24min (144 min),
-  // 5 slots × 144 = 720 min = 12h fixed, regardless of actual day/night length.
-  const chunk = 144;
+  // Classical Pancha Pakshi: each main பட்சி slot is exactly 2h 24min (144 min).
+  const cfg = getConfig(paksha, period);
+  const chunk = MAIN_SLOT_MIN;
   const start = period === "day" ? sunrise : sunset;
-
   const weekday = date.getDay();
 
-  /* ------------------------------------------------------------------
-   * தேய்பிறை (Krishna) tables — matches the reference PDF exactly.
-   *   DAY   bird cols:  கோழி, ஆந்தை, மயில், காகம், வல்லூறு
-   *         act seq  :  ஊண், சாவு, துயில், அரசு, நடை
-   *   NIGHT bird cols:  வல்லூறு, மயில், கோழி, காகம், ஆந்தை
-   *         act seq  :  ஊண், துயில், நடை, சாவு, அரசு
-   * ------------------------------------------------------------------ */
-  const K_DAY_BIRDS: Bird[]     = ["கோழி", "ஆந்தை", "மயில்", "காகம்", "வல்லூறு"];
-  const K_NIGHT_BIRDS: Bird[]   = ["வல்லூறு", "மயில்", "கோழி", "காகம்", "ஆந்தை"];
-  const K_DAY_ACTS: Activity[]  = ["உண்ணல்", "மரணம்", "உறங்குதல்", "ஆட்சி", "நடத்தல்"];
-  const K_NIGHT_ACTS: Activity[]= ["உண்ணல்", "உறங்குதல்", "நடத்தல்", "மரணம்", "ஆட்சி"];
-  const K_DAY_ADHI: Record<number, Bird> = {
-    0: "கோழி", 2: "கோழி",
-    1: "மயில்", 6: "மயில்",
-    3: "காகம்",
-    4: "ஆந்தை",
-    5: "வல்லூறு",
-  };
-  const K_NIGHT_ADHI: Record<number, Bird> = {
-    0: "வல்லூறு", 2: "வல்லூறு",
-    1: "கோழி", 6: "கோழி",
-    3: "ஆந்தை",
-    4: "காகம்",
-    5: "மயில்",
-  };
-
-  /* ------------------------------------------------------------------
-   * வளர்பிறை (Shukla) tables — from user reference photo (verified
-   * against PDF Thursday-day example).
-   *   DAY   bird cols:  வல்லூறு, ஆந்தை, காகம், கோழி, மயில்
-   *         act seq  :  ஊண், நடை, அரசு, துயில், சாவு
-   *   NIGHT bird cols:  வல்லூறு, ஆந்தை, காகம், கோழி, மயில் (same order)
-   *         act seq  :  ஊண், அரசு, சாவு, நடை, துயில்
-   * ------------------------------------------------------------------ */
-  const S_DAY_BIRDS: Bird[]     = ["வல்லூறு", "ஆந்தை", "காகம்", "கோழி", "மயில்"];
-  const S_NIGHT_BIRDS: Bird[]   = ["வல்லூறு", "ஆந்தை", "காகம்", "கோழி", "மயில்"];
-  const S_DAY_ACTS: Activity[]  = ["உண்ணல்", "நடத்தல்", "ஆட்சி", "உறங்குதல்", "மரணம்"];
-  const S_NIGHT_ACTS: Activity[]= ["உண்ணல்", "ஆட்சி", "மரணம்", "நடத்தல்", "உறங்குதல்"];
-  const S_DAY_ADHI: Record<number, Bird> = {
-    0: "வல்லூறு", 2: "வல்லூறு",   // ஞாயிறு, செவ்வாய்
-    1: "ஆந்தை",  3: "ஆந்தை",     // திங்கள், புதன்
-    4: "காகம்",                    // வியாழன்
-    5: "கோழி",                     // வெள்ளி
-    6: "மயில்",                    // சனி
-  };
-  const S_NIGHT_ADHI: Record<number, Bird> = {
-    0: "காகம்",  2: "காகம்",       // ஞாயிறு, செவ்வாய்
-    1: "கோழி",   3: "கோழி",        // திங்கள், புதன்
-    4: "மயில்",                    // வியாழன்
-    5: "வல்லூறு",                  // வெள்ளி
-    6: "ஆந்தை",                    // சனி
-  };
-
-  // சூட்சம durations (minutes within a 144-min main slot).
-  const SUB_DUR_SHUKLA_DAY: Record<Activity, number> = {
-    ஆட்சி: 48, உண்ணல்: 30, நடத்தல்: 36, உறங்குதல்: 18, மரணம்: 12,
-  };
-  const SUB_DUR_SHUKLA_NIGHT: Record<Activity, number> = {
-    ஆட்சி: 24, உண்ணல்: 30, நடத்தல்: 30, உறங்குதல்: 24, மரணம்: 36,
-  };
-  const SUB_DUR_KRISHNA_DAY: Record<Activity, number> = {
-    உறங்குதல்: 12, நடத்தல்: 36, மரணம்: 30, ஆட்சி: 18, உண்ணல்: 48,
-  };
-  const SUB_DUR_KRISHNA_NIGHT: Record<Activity, number> = {
-    உறங்குதல்: 18, நடத்தல்: 42, மரணம்: 24, ஆட்சி: 18, உண்ணல்: 42,
-  };
-
-  const subDurTable =
-    paksha === "krishna"
-      ? period === "day" ? SUB_DUR_KRISHNA_DAY : SUB_DUR_KRISHNA_NIGHT
-      : period === "day" ? SUB_DUR_SHUKLA_DAY : SUB_DUR_SHUKLA_NIGHT;
-
-  // ---------- Unified PDF-exact computation for both pakshas ----------
-  const birds =
-    paksha === "krishna"
-      ? period === "day" ? K_DAY_BIRDS : K_NIGHT_BIRDS
-      : period === "day" ? S_DAY_BIRDS : S_NIGHT_BIRDS;
-  const acts =
-    paksha === "krishna"
-      ? period === "day" ? K_DAY_ACTS : K_NIGHT_ACTS
-      : period === "day" ? S_DAY_ACTS : S_NIGHT_ACTS;
-  const adhiMap =
-    paksha === "krishna"
-      ? period === "day" ? K_DAY_ADHI : K_NIGHT_ADHI
-      : period === "day" ? S_DAY_ADHI : S_NIGHT_ADHI;
-
-  const adhiCol = birds.indexOf(adhiMap[weekday] ?? birds[0]);
+  const { birds, acts, adhi, subDur, direction } = cfg;
+  const adhiCol = birds.indexOf(adhi[weekday] ?? birds[0]);
   const janmaCol = Math.max(0, birds.indexOf(janma));
 
-  // Formula direction: Valarpirai (Shukla) NIGHT reverses column direction
-  // per user's reference photo. Other combos keep (c - adhi + i).
-  const reverse = paksha === "shukla" && period === "night";
   const actAt = (c: number, i: number) => {
-    const idx = reverse ? (adhiCol - c + i) : (c - adhiCol + i);
+    const idx = direction === "backward" ? (adhiCol - c + i) : (c - adhiCol + i);
     return acts[((idx % 5) + 5) % 5];
   };
 
   return Array.from({ length: 5 }, (_, i) => {
-    // Diagonal read: slot i's main bird = janma shifted by i.
     const c = (janmaCol + i) % 5;
     const s = start + i * chunk;
     const e = s + chunk;
@@ -311,7 +223,7 @@ export function computeSlots(
     const subs = Array.from({ length: 5 }, (_, j) => {
       const subC = (c + j) % 5;
       const subAct = actAt(subC, i + j);
-      const dur = subDurTable[subAct] ?? 28.8;
+      const dur = subDur[subAct] ?? 28.8;
       const ss = cursor;
       const se = cursor + dur;
       cursor = se;
@@ -319,7 +231,6 @@ export function computeSlots(
     });
     return { bird, activity, start: s, end: e, subs };
   });
-
 }
 
 
