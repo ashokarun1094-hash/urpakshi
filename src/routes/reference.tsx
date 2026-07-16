@@ -14,7 +14,7 @@ import {
   KRISHNA,
   WEEKDAY_TA,
   MAIN_SLOT_MIN,
-  type PakshaPeriodConfig,
+  type PakshaFullConfig,
 } from "@/lib/pakshi-config";
 
 export const Route = createFileRoute("/reference")({
@@ -31,29 +31,20 @@ export const Route = createFileRoute("/reference")({
   component: ReferencePage,
 });
 
-/**
- * Compute the 5×5 activity table for a given period config + weekday.
- * Rows = birds (columns of the reference table), Cols = the 5 main slots.
- * Cell contains the activity at (bird row, slot column).
- */
-function buildTable(cfg: PakshaPeriodConfig, weekday: number) {
-  const { birds, acts, adhi, direction } = cfg;
-  const adhiCol = birds.indexOf(adhi[weekday] ?? birds[0]);
-  const cell = (row: number, i: number) => {
-    const idx = direction === "backward" ? adhiCol - row + i : row - adhiCol + i;
-    return acts[((idx % 5) + 5) % 5];
-  };
-  return { birds, cell, adhiBird: adhi[weekday] };
+function buildTable(cfg: PakshaFullConfig, weekday: number) {
+  const w = cfg.weekdays[weekday] ?? cfg.weekdays[0];
+  const cell = (row: number, i: number) => w.grid[row]?.[i] ?? "";
+  return { birds: cfg.birds, cell };
 }
 
 function Table({
   cfg,
   weekday,
 }: {
-  cfg: PakshaPeriodConfig;
+  cfg: PakshaFullConfig;
   weekday: number;
 }) {
-  const { birds, cell, adhiBird } = buildTable(cfg, weekday);
+  const { birds, cell } = buildTable(cfg, weekday);
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-xs">
@@ -70,14 +61,7 @@ function Table({
         <tbody>
           {birds.map((b, row) => (
             <tr key={b}>
-              <td
-                className={`border p-1 font-medium ${
-                  b === adhiBird ? "bg-primary/20" : ""
-                }`}
-              >
-                {b}
-                {b === adhiBird ? " ★" : ""}
-              </td>
+              <td className="border p-1 font-medium">{b}</td>
               {Array.from({ length: 5 }, (_, i) => (
                 <td key={i} className="border p-1 text-center">
                   {cell(row, i)}
@@ -91,15 +75,22 @@ function Table({
   );
 }
 
-function DurationsRow({ cfg }: { cfg: PakshaPeriodConfig }) {
-  const total = Object.values(cfg.subDur).reduce((a, b) => a + b, 0);
+function DurationsRow({
+  cfg,
+  weekday,
+}: {
+  cfg: PakshaFullConfig;
+  weekday: number;
+}) {
+  const sub = (cfg.weekdays[weekday] ?? cfg.weekdays[0]).subDur;
+  const total = (Object.values(sub) as number[]).reduce((a, b) => a + b, 0);
   return (
     <div className="mt-1 text-[11px] text-muted-foreground">
       சூட்சம நிமிடம்:{" "}
       {(["உண்ணல்", "ஆட்சி", "நடத்தல்", "உறங்குதல்", "மரணம்"] as const).map(
         (a) => (
           <span key={a} className="mr-2">
-            {a} {cfg.subDur[a]}m
+            {a} {sub[a]}m
           </span>
         )
       )}
@@ -264,23 +255,17 @@ function ReferencePage() {
           <section key={sec.key} className="rounded-lg border p-3">
             <h2 className="mb-2 text-lg font-semibold">{sec.label}</h2>
             <div className="mb-2 text-[11px] text-muted-foreground">
-              Bird order: {cfg.birds.join(" · ")} · Activity seq (from ஊண்):{" "}
-              {cfg.acts.join(" → ")} · Direction: {cfg.direction}
+              Bird order: {cfg.birds.join(" · ")}
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
               {WEEKDAY_TA.map((wname, wd) => (
                 <div key={wd} className="rounded border p-2">
                   <div className="mb-1 flex items-baseline justify-between">
-                    <div className="font-medium">
-                      {wname}{" "}
-                      <span className="text-xs text-muted-foreground">
-                        · adhi: {cfg.adhi[wd]}
-                      </span>
-                    </div>
+                    <div className="font-medium">{wname}</div>
                   </div>
                   <Table cfg={cfg} weekday={wd} />
-                  <DurationsRow cfg={cfg} />
+                  <DurationsRow cfg={cfg} weekday={wd} />
                   {showClock && (
                     <ClockView
                       paksha={sec.paksha}
