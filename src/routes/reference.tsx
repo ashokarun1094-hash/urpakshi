@@ -255,23 +255,17 @@ function ReferencePage() {
           <section key={sec.key} className="rounded-lg border p-3">
             <h2 className="mb-2 text-lg font-semibold">{sec.label}</h2>
             <div className="mb-2 text-[11px] text-muted-foreground">
-              Bird order: {cfg.birds.join(" · ")} · Activity seq (from ஊண்):{" "}
-              {cfg.acts.join(" → ")} · Direction: {cfg.direction}
+              Bird order: {cfg.birds.join(" · ")}
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
               {WEEKDAY_TA.map((wname, wd) => (
                 <div key={wd} className="rounded border p-2">
                   <div className="mb-1 flex items-baseline justify-between">
-                    <div className="font-medium">
-                      {wname}{" "}
-                      <span className="text-xs text-muted-foreground">
-                        · adhi: {cfg.adhi[wd]}
-                      </span>
-                    </div>
+                    <div className="font-medium">{wname}</div>
                   </div>
                   <Table cfg={cfg} weekday={wd} />
-                  <DurationsRow cfg={cfg} />
+                  <DurationsRow cfg={cfg} weekday={wd} />
                   {showClock && (
                     <ClockView
                       paksha={sec.paksha}
