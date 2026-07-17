@@ -14,6 +14,8 @@ import {
   KRISHNA,
   WEEKDAY_TA,
   MAIN_SLOT_MIN,
+  buildGrid,
+  adhiIndex,
   type PakshaFullConfig,
 } from "@/lib/pakshi-config";
 
