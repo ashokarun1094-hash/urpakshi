@@ -211,8 +211,6 @@ export function computeSlots(
   const janmaShift = Math.max(0, birds.indexOf(janma));
   void janma; // reserved for friend/enemy analysis elsewhere
 
-  // Reference to keep buildGrid usable for the reference page.
-  void buildGrid;
 
   return Array.from({ length: 5 }, (_, i) => {
     const c = (adhiIdx + i + janmaShift) % 5;
