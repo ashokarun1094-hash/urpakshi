@@ -203,29 +203,37 @@ export function computeSlots(
   const start = period === "day" ? sunrise : sunset;
   const weekday = date.getDay();
 
-  const { birds, weekdays } = cfg;
-  const wcfg = weekdays[weekday] ?? weekdays[0];
-  const { grid, subDur } = wcfg;
-  const janmaCol = Math.max(0, birds.indexOf(janma));
+  const { birds, subBirds, acts, subDur } = cfg;
+  const adhiIdx = adhiIndex(cfg, weekday);
+  // Optional janma shift — janma bird determines where the person's cycle
+  // starts within the weekday's fixed sequence. Set shift=0 to always start
+  // from the weekday adhikaram bird.
+  const janmaShift = Math.max(0, birds.indexOf(janma));
+  void janma; // reserved for friend/enemy analysis elsewhere
 
-  const actAt = (c: number, i: number) => grid[c]?.[i] ?? "உண்ணல்";
+  // Reference to keep buildGrid usable for the reference page.
+  void buildGrid;
 
   return Array.from({ length: 5 }, (_, i) => {
-    const c = (janmaCol + i) % 5;
+    const c = (adhiIdx + i + janmaShift) % 5;
     const s = start + i * chunk;
     const e = s + chunk;
     const bird = birds[c];
-    const activity = actAt(c, i);
+    const activity = acts[i];
 
+    // Sub-slots: 5 sub-slots inside this main slot rotate through subBirds
+    // starting from this main slot's bird, with activities rotating from
+    // this main slot's activity.
+    const subStartIdx = Math.max(0, subBirds.indexOf(bird));
     let cursor = s;
     const subs = Array.from({ length: 5 }, (_, j) => {
-      const subC = (c + j) % 5;
-      const subAct = actAt(subC, (i + j) % 5);
+      const subBird = subBirds[(subStartIdx + j) % 5];
+      const subAct = acts[(i + j) % 5];
       const dur = subDur[subAct] ?? 28.8;
       const ss = cursor;
       const se = cursor + dur;
       cursor = se;
-      return { bird: birds[subC], activity: subAct, start: ss, end: se };
+      return { bird: subBird, activity: subAct, start: ss, end: se };
     });
     return { bird, activity, start: s, end: e, subs };
   });
