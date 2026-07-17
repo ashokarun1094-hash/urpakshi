@@ -84,7 +84,8 @@ function DurationsRow({
   cfg: PakshaFullConfig;
   weekday: number;
 }) {
-  const sub = (cfg.weekdays[weekday] ?? cfg.weekdays[0]).subDur;
+  const sub = cfg.subDur;
+  void weekday;
   const total = (Object.values(sub) as number[]).reduce((a, b) => a + b, 0);
   return (
     <div className="mt-1 text-[11px] text-muted-foreground">
