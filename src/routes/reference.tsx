@@ -14,6 +14,8 @@ import {
   KRISHNA,
   WEEKDAY_TA,
   MAIN_SLOT_MIN,
+  buildGrid,
+  adhiIndex,
   type PakshaFullConfig,
 } from "@/lib/pakshi-config";
 
@@ -32,9 +34,9 @@ export const Route = createFileRoute("/reference")({
 });
 
 function buildTable(cfg: PakshaFullConfig, weekday: number) {
-  const w = cfg.weekdays[weekday] ?? cfg.weekdays[0];
-  const cell = (row: number, i: number) => w.grid[row]?.[i] ?? "";
-  return { birds: cfg.birds, cell };
+  const grid = buildGrid(cfg, weekday);
+  const cell = (row: number, i: number) => grid[row]?.[i] ?? "";
+  return { birds: cfg.birds, cell, adhiCol: adhiIndex(cfg, weekday) };
 }
 
 function Table({
@@ -82,7 +84,8 @@ function DurationsRow({
   cfg: PakshaFullConfig;
   weekday: number;
 }) {
-  const sub = (cfg.weekdays[weekday] ?? cfg.weekdays[0]).subDur;
+  const sub = cfg.subDur;
+  void weekday;
   const total = (Object.values(sub) as number[]).reduce((a, b) => a + b, 0);
   return (
     <div className="mt-1 text-[11px] text-muted-foreground">
