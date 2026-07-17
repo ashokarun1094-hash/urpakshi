@@ -205,28 +205,28 @@ export function computeSlots(
 
   const { birds, subBirds, acts, subDur } = cfg;
   const adhiIdx = adhiIndex(cfg, weekday);
-  // Optional janma shift — janma bird determines where the person's cycle
-  // starts within the weekday's fixed sequence. Set shift=0 to always start
-  // from the weekday adhikaram bird.
-  const janmaShift = Math.max(0, birds.indexOf(janma));
-  void janma; // reserved for friend/enemy analysis elsewhere
-
+  // Janma bird row in the 5×5 grid. Activity varies per weekday (adhiIdx),
+  // per janma bird row, and per paksha×period (different birds/acts arrays).
+  const janmaIdx = Math.max(0, birds.indexOf(janma));
 
   return Array.from({ length: 5 }, (_, i) => {
-    const c = (adhiIdx + i + janmaShift) % 5;
+    // Ruling bird across the day rotates from adhikaram.
+    const rulingIdx = (adhiIdx + i) % 5;
     const s = start + i * chunk;
     const e = s + chunk;
-    const bird = birds[c];
-    const activity = acts[i];
+    const bird = birds[rulingIdx];
+    // Activity done by the janma bird in this slot:
+    // grid[janmaIdx][i] = acts[(i - janmaIdx + adhiIdx) mod 5].
+    const activity = acts[((i - janmaIdx + adhiIdx) % 5 + 5) % 5];
 
-    // Sub-slots: 5 sub-slots inside this main slot rotate through subBirds
-    // starting from this main slot's bird, with activities rotating from
-    // this main slot's activity.
+    // Sub-slots: rotate subBirds starting from this main slot's ruling bird;
+    // sub-activities rotate from this main slot's (janma-row) activity.
     const subStartIdx = Math.max(0, subBirds.indexOf(bird));
+    const actStartIdx = Math.max(0, acts.indexOf(activity));
     let cursor = s;
     const subs = Array.from({ length: 5 }, (_, j) => {
       const subBird = subBirds[(subStartIdx + j) % 5];
-      const subAct = acts[(i + j) % 5];
+      const subAct = acts[(actStartIdx + j) % 5];
       const dur = subDur[subAct] ?? 28.8;
       const ss = cursor;
       const se = cursor + dur;
@@ -235,6 +235,7 @@ export function computeSlots(
     });
     return { bird, activity, start: s, end: e, subs };
   });
+
 }
 
 
