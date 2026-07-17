@@ -34,9 +34,9 @@ export const Route = createFileRoute("/reference")({
 });
 
 function buildTable(cfg: PakshaFullConfig, weekday: number) {
-  const w = cfg.weekdays[weekday] ?? cfg.weekdays[0];
-  const cell = (row: number, i: number) => w.grid[row]?.[i] ?? "";
-  return { birds: cfg.birds, cell };
+  const grid = buildGrid(cfg, weekday);
+  const cell = (row: number, i: number) => grid[row]?.[i] ?? "";
+  return { birds: cfg.birds, cell, adhiCol: adhiIndex(cfg, weekday) };
 }
 
 function Table({
