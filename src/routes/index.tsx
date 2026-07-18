@@ -553,7 +553,7 @@ function TimingsScreen({
 
       <p className="text-[11px] text-muted-foreground text-center px-6 pb-6 leading-relaxed">
         {sunOverride
-          ? "தனிப்பயன் சூரிய நேரங்களால் கணக்கிடப்பட்டது."
+          ? "தனிப்பயன் சூரிய உதய நேரத்தால் கணக்கிடப்பட்டது."
           : `${place.name} இருப்பிடத்திற்கு தானாக கணக்கிடப்பட்டது.`}
       </p>
     </>
