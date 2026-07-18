@@ -247,8 +247,7 @@ function ReferencePage() {
           Show clock times
         </label>
         <div className="text-xs text-muted-foreground">
-          Sunrise ~ {formatRange(sun.sunrise, sun.sunrise).split(" - ")[0]} ·
-          Sunset ~ {formatRange(sun.sunset, sun.sunset).split(" - ")[0]}
+          Sunrise ~ {formatRange(sun.sunrise, sun.sunrise).split(" - ")[0]}
         </div>
       </div>
 
