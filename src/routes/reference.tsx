@@ -188,7 +188,7 @@ function ReferencePage() {
             பஞ்சபக்ஷி முழு அட்டவணை — Reference
           </h1>
           <p className="text-xs text-muted-foreground">
-            7 weekdays × day/night × 2 pakshas. ★ = adhikaram (ruling) bird.
+            7 weekdays × day/night × 2 pakshas. Main and சூட்சம orders are table-based.
             Edit <code>src/lib/pakshi-config.ts</code> to alter any cycle.
           </p>
         </div>
@@ -247,8 +247,7 @@ function ReferencePage() {
           Show clock times
         </label>
         <div className="text-xs text-muted-foreground">
-          Sunrise ~ {formatRange(sun.sunrise, sun.sunrise).split(" - ")[0]} ·
-          Sunset ~ {formatRange(sun.sunset, sun.sunset).split(" - ")[0]}
+          Sunrise ~ {formatRange(sun.sunrise, sun.sunrise).split(" - ")[0]}
         </div>
       </div>
 
@@ -258,7 +257,7 @@ function ReferencePage() {
           <section key={sec.key} className="rounded-lg border p-3">
             <h2 className="mb-2 text-lg font-semibold">{sec.label}</h2>
             <div className="mb-2 text-[11px] text-muted-foreground">
-              Bird order: {cfg.birds.join(" · ")}
+              Bird order: {cfg.birds.join(" · ")} · சூட்சம: {cfg.subBirds.join(" · ")}
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
@@ -287,7 +286,7 @@ function ReferencePage() {
       })}
 
       <footer className="text-xs text-muted-foreground">
-        To alter any cycle (bird order, activity sequence, adhikaram map, or
+        To alter any cycle (bird order, activity sequence, weekday offset, or
         sub-slot minutes), edit <code>src/lib/pakshi-config.ts</code>. The
         calculator and this reference page both read from that single source.
       </footer>

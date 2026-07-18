@@ -24,14 +24,13 @@ import {
   type Place,
 } from "@/lib/pakshi";
 
-type SunOverride = { sunrise: string; sunset: string } | null;
+type SunOverride = { sunrise: string } | null;
 
 function toSunMinutes(o: SunOverride) {
   if (!o) return undefined;
   const sr = timeToMinutes(o.sunrise);
-  const ss = timeToMinutes(o.sunset);
-  if (sr == null || ss == null) return undefined;
-  return { sunrise: sr, sunset: ss };
+  if (sr == null) return undefined;
+  return { sunrise: sr, sunset: sr + 720 };
 }
 
 export const Route = createFileRoute("/")({
@@ -99,9 +98,7 @@ function App() {
   const [date, setDate] = useState(new Date());
   const [period, setPeriod] = useState<"day" | "night">("day");
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
-  const [sunOverride, setSunOverride] = useState<{ sunrise: string; sunset: string } | null>(
-    null
-  );
+  const [sunOverride, setSunOverride] = useState<{ sunrise: string } | null>(null);
 
   const place = PLACES.find((p) => p.id === form.placeId) ?? PLACES[0];
   const birth = parseBirthDate(form);
@@ -495,7 +492,6 @@ function TimingsScreen({
   const auto = useMemo(() => defaultSunTimes(date, place), [date, place]);
   const effective = sunOverride ?? {
     sunrise: minutesToTime(auto.sunrise),
-    sunset: minutesToTime(auto.sunset),
   };
   const slots = useMemo(
     () => computeSlots(date, period, place, janma, paksha, toSunMinutes(sunOverride)),
@@ -512,7 +508,7 @@ function TimingsScreen({
 
       <div className="mx-4 mt-4 rounded-2xl border border-border bg-card p-3">
         <div className="text-xs font-semibold text-muted-foreground mb-2 flex items-center justify-between">
-          <span>சூரிய உதயம் / அஸ்தமனம் ({paksha === "krishna" ? "தேய் பிறை" : "வளர் பிறை"})</span>
+          <span>சூரிய உதயம் ({paksha === "krishna" ? "தேய் பிறை" : "வளர் பிறை"})</span>
           {sunOverride && (
             <button
               onClick={() => setSunOverride(null)}
@@ -522,25 +518,14 @@ function TimingsScreen({
             </button>
           )}
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div>
           <label className="flex flex-col text-[11px] text-muted-foreground">
             சூரிய உதயம்
             <input
               type="time"
               value={effective.sunrise}
               onChange={(e) =>
-                setSunOverride({ sunrise: e.target.value, sunset: effective.sunset })
-              }
-              className="mt-1 border border-border rounded-lg px-2 py-1.5 text-sm text-foreground bg-background"
-            />
-          </label>
-          <label className="flex flex-col text-[11px] text-muted-foreground">
-            சூரிய அஸ்தமனம்
-            <input
-              type="time"
-              value={effective.sunset}
-              onChange={(e) =>
-                setSunOverride({ sunrise: effective.sunrise, sunset: e.target.value })
+                setSunOverride({ sunrise: e.target.value })
               }
               className="mt-1 border border-border rounded-lg px-2 py-1.5 text-sm text-foreground bg-background"
             />
@@ -568,7 +553,7 @@ function TimingsScreen({
 
       <p className="text-[11px] text-muted-foreground text-center px-6 pb-6 leading-relaxed">
         {sunOverride
-          ? "தனிப்பயன் சூரிய நேரங்களால் கணக்கிடப்பட்டது."
+          ? "தனிப்பயன் சூரிய உதய நேரத்தால் கணக்கிடப்பட்டது."
           : `${place.name} இருப்பிடத்திற்கு தானாக கணக்கிடப்பட்டது.`}
       </p>
     </>

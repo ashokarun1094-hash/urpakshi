@@ -4,7 +4,7 @@
 // in Tamil almanacs. Timings are approximate: sunrise/sunset are computed
 // from a rough NOAA-style formula using the selected location's latitude.
 
-import { getConfig, MAIN_SLOT_MIN, adhiIndex } from "./pakshi-config";
+import { activityFor, getConfig, MAIN_SLOT_MIN } from "./pakshi-config";
 
 export type Bird = "வல்லூறு" | "ஆந்தை" | "காகம்" | "கோழி" | "மயில்";
 export type Activity = "ஆட்சி" | "உண்ணல்" | "நடத்தல்" | "உறங்குதல்" | "மரணம்";
@@ -196,37 +196,32 @@ export function computeSlots(
   paksha: "shukla" | "krishna" = "shukla",
   overrideSun?: { sunrise: number; sunset: number }
 ): Slot[] {
-  const { sunrise, sunset } = overrideSun ?? sunTimes(date, place.lat, place.lon);
+  const { sunrise } = overrideSun ?? sunTimes(date, place.lat, place.lon);
   // Classical Pancha Pakshi: each main பட்சி slot is exactly 2h 24min (144 min).
   const cfg = getConfig(paksha, period);
   const chunk = MAIN_SLOT_MIN;
-  const start = period === "day" ? sunrise : sunset;
+  // All calculations are based from sunrise. Day uses slots 1-5, night uses
+  // the next five 144-minute slots from the same sunrise anchor.
+  const start = sunrise + (period === "night" ? MAIN_SLOT_MIN * 5 : 0);
   const weekday = date.getDay();
 
-  const { birds, subBirds, acts, subDur } = cfg;
-  const adhiIdx = adhiIndex(cfg, weekday);
+  const { birds, slotBirds, subBirds, subActs, subDur } = cfg;
   // Janma bird row in the 5×5 grid. Activity varies per weekday (adhiIdx),
   // per janma bird row, and per paksha×period (different birds/acts arrays).
   const janmaIdx = Math.max(0, birds.indexOf(janma));
 
   return Array.from({ length: 5 }, (_, i) => {
-    // Ruling bird across the day rotates from adhikaram.
-    const rulingIdx = (adhiIdx + i) % 5;
     const s = start + i * chunk;
     const e = s + chunk;
-    const bird = birds[rulingIdx];
-    // Activity done by the janma bird in this slot:
-    // grid[janmaIdx][i] = acts[(i - janmaIdx + adhiIdx) mod 5].
-    const activity = acts[((i - janmaIdx + adhiIdx) % 5 + 5) % 5];
+    const bird = slotBirds[i % slotBirds.length];
+    const activity = activityFor(cfg, weekday, janmaIdx, i);
 
-    // Sub-slots: rotate subBirds starting from this main slot's ruling bird;
-    // sub-activities rotate from this main slot's (janma-row) activity.
-    const subStartIdx = Math.max(0, subBirds.indexOf(bird));
-    const actStartIdx = Math.max(0, acts.indexOf(activity));
+    // Sub-slots are fixed by paksha × period only. Durations are taken from
+    // the matching activity table and always total 144 minutes.
     let cursor = s;
     const subs = Array.from({ length: 5 }, (_, j) => {
-      const subBird = subBirds[(subStartIdx + j) % 5];
-      const subAct = acts[(actStartIdx + j) % 5];
+      const subBird = subBirds[j % subBirds.length];
+      const subAct = subActs[j % subActs.length];
       const dur = subDur[subAct] ?? 28.8;
       const ss = cursor;
       const se = cursor + dur;
